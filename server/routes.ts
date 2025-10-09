@@ -769,6 +769,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Alerts ==========
+  app.post("/api/alerts", async (req, res) => {
+    try {
+      const data = insertAlertSchema.parse(req.body);
+      const alert = await storage.createAlert(data as any);
+      res.json(alert);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/alerts", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      const alerts = await storage.getAlertsByUser(userId as string);
+      res.json(alerts);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.delete("/api/alerts/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteAlert(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Alert not found" });
+      }
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ========== Community Routes ==========
 
   // Create community

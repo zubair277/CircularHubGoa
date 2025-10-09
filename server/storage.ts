@@ -152,6 +152,12 @@ export interface IStorage {
   // Delivery Requests
   createDeliveryRequest(r: InsertDeliveryRequest): Promise<DeliveryRequest>;
   getDeliveryRequestsByListing(listingId: string): Promise<DeliveryRequest[]>;
+
+  // Alerts
+  createAlert(a: InsertAlert): Promise<Alert>;
+  getAlertsByUser(userId: string): Promise<Alert[]>;
+  deleteAlert(id: string): Promise<boolean>;
+  getAllActiveAlerts(): Promise<Alert[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -173,6 +179,7 @@ export class MemStorage implements IStorage {
   private communityComments: Map<string, CommunityComment>;
   private communityMessages: Map<string, CommunityMessage>;
   private deliveryRequests: Map<string, DeliveryRequest>;
+  private alerts: Map<string, Alert>;
 
   constructor() {
     this.users = new Map();
@@ -193,6 +200,7 @@ export class MemStorage implements IStorage {
     this.communityComments = new Map();
     this.communityMessages = new Map();
     this.deliveryRequests = new Map();
+    this.alerts = new Map();
   }
 
   // Users
@@ -241,6 +249,10 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.listings.set(id, listing);
+    
+    // Check for matching alerts and create notifications
+    await this.checkAlertsForListing(listing);
+    
     return listing;
   }
 
@@ -621,6 +633,80 @@ export class MemStorage implements IStorage {
 
   async getDeliveryRequestsByListing(listingId: string): Promise<DeliveryRequest[]> {
     return Array.from(this.deliveryRequests.values()).filter(d => d.listingId === listingId);
+  }
+
+  // Alerts
+  async createAlert(insert: InsertAlert): Promise<Alert> {
+    const id = randomUUID();
+    const alert: Alert = { ...insert, id, isActive: true, createdAt: new Date() } as any;
+    this.alerts.set(id, alert);
+    return alert;
+  }
+
+  async getAlertsByUser(userId: string): Promise<Alert[]> {
+    return Array.from(this.alerts.values()).filter(a => a.userId === userId);
+  }
+
+  async deleteAlert(id: string): Promise<boolean> {
+    return this.alerts.delete(id);
+  }
+
+  async getAllActiveAlerts(): Promise<Alert[]> {
+    return Array.from(this.alerts.values()).filter(a => a.isActive);
+  }
+
+  // Helper method to check alerts for a new listing
+  async checkAlertsForListing(listing: Listing): Promise<void> {
+    const activeAlerts = await this.getAllActiveAlerts();
+    
+    for (const alert of activeAlerts) {
+      // Check if keywords match (case-insensitive)
+      const keywordsMatch = alert.keywords.toLowerCase().split(' ').some(keyword => 
+        listing.title.toLowerCase().includes(keyword) || 
+        listing.description.toLowerCase().includes(keyword)
+      );
+      
+      // Check if category matches (if alert has a category)
+      const categoryMatches = !alert.categoryId || 
+        listing.category.toLowerCase() === alert.categoryId.toLowerCase();
+      
+      // Check if listing is within radius (if alert has location)
+      let withinRadius = true;
+      if (alert.userLatitude && alert.userLongitude && listing.latitude && listing.longitude) {
+        const distance = this.calculateDistance(
+          parseFloat(alert.userLatitude),
+          parseFloat(alert.userLongitude),
+          parseFloat(listing.latitude),
+          parseFloat(listing.longitude)
+        );
+        withinRadius = distance <= alert.radiusKm;
+      }
+      
+      if (keywordsMatch && categoryMatches && withinRadius) {
+        // Create notification for the user
+        await this.createNotification({
+          userId: alert.userId,
+          type: "listing_match",
+          title: "New Item Matches Your Alert!",
+          message: `"${listing.title}" matches your alert for "${alert.keywords}"`,
+          relatedId: listing.id,
+        });
+        
+        console.log(`Alert matched for user ${alert.userId}: ${listing.title}`);
+      }
+    }
+  }
+
+  // Helper method to calculate distance between two coordinates (Haversine formula)
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   // Community

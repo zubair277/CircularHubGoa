@@ -3,10 +3,42 @@ import DashboardStats from "@/components/DashboardStats";
 import ListingCard from "@/components/ListingCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Bell, Trash2, MapPin } from "lucide-react";
 import { Link } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch user alerts
+  const { data: alerts = [], isLoading: isLoadingAlerts } = useQuery({
+    queryKey: ["alerts"],
+    queryFn: async () => {
+      const res = await fetch("/api/alerts?userId=demo-user-1");
+      if (!res.ok) throw new Error("Failed to fetch alerts");
+      return res.json();
+    },
+  });
+
+  // Delete alert mutation
+  const deleteAlertMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      const res = await fetch(`/api/alerts/${alertId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete alert");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+      toast({ title: "Alert deleted", description: "Your alert has been removed." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete alert", variant: "destructive" });
+    },
+  });
+
   const monthlyData = [
     { month: "Jan", waste: 180 },
     { month: "Feb", waste: 220 },
@@ -118,6 +150,77 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+        </div>
+
+        {/* My Alerts Section */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">My Alerts</h2>
+            <Link href="/marketplace">
+              <Button variant="outline" className="rounded-full" data-testid="button-create-alert">
+                <Bell className="w-4 h-4 mr-2" />
+                Create Alert
+              </Button>
+            </Link>
+          </div>
+          
+          {isLoadingAlerts ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading alerts...</p>
+            </div>
+          ) : alerts.length === 0 ? (
+            <Card className="rounded-2xl shadow-lg">
+              <CardContent className="text-center py-12">
+                <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No alerts yet</h3>
+                <p className="text-muted-foreground mb-6">
+                  Create alerts to get notified when items you're looking for become available.
+                </p>
+                <Link href="/marketplace">
+                  <Button className="rounded-full">
+                    <Bell className="w-4 h-4 mr-2" />
+                    Create Your First Alert
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {alerts.map((alert: any) => (
+                <Card key={alert.id} className="rounded-2xl shadow-lg">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg mb-1">{alert.keywords}</CardTitle>
+                        {alert.categoryId && (
+                          <Badge variant="secondary" className="text-xs">
+                            {alert.categoryId}
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteAlertMutation.mutate(alert.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>Within {alert.radiusKm} km</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Created {new Date(alert.createdAt).toLocaleDateString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-8">
