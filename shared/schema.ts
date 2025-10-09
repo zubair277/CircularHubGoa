@@ -191,6 +191,14 @@ export const communityComments = pgTable("community_comments", {
   postId: varchar("post_id").notNull().references(() => communityPosts.id),
 });
 
+export const communityMessages = pgTable("community_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  communityId: varchar("community_id").notNull().references(() => communities.id),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ============== Zod Schemas ==============
 
 // Users
@@ -313,3 +321,7 @@ export type CommunityPost = typeof communityPosts.$inferSelect;
 export const insertCommunityCommentSchema = createInsertSchema(communityComments).omit({ id: true, createdAt: true });
 export type InsertCommunityComment = z.infer<typeof insertCommunityCommentSchema>;
 export type CommunityComment = typeof communityComments.$inferSelect;
+
+export const insertCommunityMessageSchema = createInsertSchema(communityMessages).omit({ id: true, createdAt: true });
+export type InsertCommunityMessage = z.infer<typeof insertCommunityMessageSchema>;
+export type CommunityMessage = typeof communityMessages.$inferSelect;

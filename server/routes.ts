@@ -770,6 +770,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Community messages
+  app.get("/api/communities/:id/messages", async (req, res) => {
+    try {
+      const rows = await storage.getCommunityMessages(req.params.id);
+      res.json(rows);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/communities/:id/messages", async (req, res) => {
+    try {
+      const row = await storage.createCommunityMessage({ communityId: req.params.id, authorId: req.body.authorId, content: req.body.content });
+      res.json(row);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
   // ========== Dashboard/Stats Routes ==========
   
   // Get user stats

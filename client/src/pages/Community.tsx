@@ -8,6 +8,7 @@ import { Plus, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Community {
   id: string;
@@ -35,6 +36,8 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [chat, setChat] = useState<{ authorId: string; content: string; createdAt?: string }[]>([]);
+  const [chatText, setChatText] = useState("");
   const [openCreate, setOpenCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -60,6 +63,19 @@ export default function CommunityPage() {
       const res = await fetch(`/api/communities/${active.id}/posts?type=${tab}`);
       const data = await res.json();
       setPosts(data);
+      const msgs = await fetch(`/api/communities/${active.id}/messages`).then(r => r.json());
+      setChat(msgs);
+      // websocket
+      const ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
+      ws.onmessage = (ev) => {
+        try {
+          const m = JSON.parse(ev.data);
+          if (m.type === 'community_message' && m.communityId === active.id) {
+            setChat((c) => [...c, { authorId: m.authorId, content: m.content, createdAt: m.createdAt }]);
+          }
+        } catch {}
+      };
+      return () => ws.close();
     })();
   }, [active?.id, tab]);
 
@@ -184,6 +200,33 @@ export default function CommunityPage() {
                   </Card>
                 ))}
               </div>
+
+              <Card className="p-4 mt-4">
+                <h3 className="font-semibold mb-2">Community Chat</h3>
+                <div className="h-56 overflow-auto border rounded-md p-2 space-y-2 bg-background/50">
+                  {chat.map((m, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[10px]">BU</AvatarFallback></Avatar>
+                      <div>
+                        <div className="text-xs text-muted-foreground">{m.authorId} • {m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : ''}</div>
+                        <div className="text-sm">{m.content}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Input placeholder="Type a message" value={chatText} onChange={(e) => setChatText(e.target.value)} />
+                  <Button className="rounded-full" onClick={async () => {
+                    if (!active || !chatText.trim()) return;
+                    const payload = { type: 'community_message', communityId: active.id, authorId: 'demo-user', content: chatText };
+                    // send via ws
+                    try { (window as any).lastWS?.send(JSON.stringify(payload)); } catch {}
+                    // also POST to persist if needed when ws not connected
+                    await fetch(`/api/communities/${active.id}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ authorId: 'demo-user', content: chatText }) });
+                    setChatText('');
+                  }}>Send</Button>
+                </div>
+              </Card>
             </div>
           </div>
         )}

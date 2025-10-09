@@ -33,6 +33,8 @@ import {
   type InsertCommunityPost,
   type CommunityComment,
   type InsertCommunityComment,
+  type CommunityMessage,
+  type InsertCommunityMessage,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -53,6 +55,7 @@ import {
   communityMemberships as communityMembershipsTable,
   communityPosts as communityPostsTable,
   communityComments as communityCommentsTable,
+  communityMessages as communityMessagesTable,
 } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -139,6 +142,10 @@ export interface IStorage {
   getCommunityPosts(communityId: string): Promise<CommunityPost[]>;
   createCommunityComment(c: InsertCommunityComment): Promise<CommunityComment>;
   getCommentsByPost(postId: string): Promise<CommunityComment[]>;
+
+  // Community messages
+  createCommunityMessage(m: InsertCommunityMessage): Promise<CommunityMessage>;
+  getCommunityMessages(communityId: string): Promise<CommunityMessage[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -158,6 +165,7 @@ export class MemStorage implements IStorage {
   private communityMemberships: Map<string, CommunityMembership>;
   private communityPosts: Map<string, CommunityPost>;
   private communityComments: Map<string, CommunityComment>;
+  private communityMessages: Map<string, CommunityMessage>;
 
   constructor() {
     this.users = new Map();
@@ -176,6 +184,7 @@ export class MemStorage implements IStorage {
     this.communityMemberships = new Map();
     this.communityPosts = new Map();
     this.communityComments = new Map();
+    this.communityMessages = new Map();
   }
 
   // Users
@@ -637,6 +646,20 @@ export class MemStorage implements IStorage {
 
   async getCommentsByPost(postId: string): Promise<CommunityComment[]> {
     return Array.from(this.communityComments.values()).filter(c => c.postId === postId);
+  }
+
+  // Community messages
+  async createCommunityMessage(m: InsertCommunityMessage): Promise<CommunityMessage> {
+    const id = randomUUID();
+    const row: CommunityMessage = { ...m, id, createdAt: new Date() } as any;
+    this.communityMessages.set(id, row);
+    return row;
+  }
+
+  async getCommunityMessages(communityId: string): Promise<CommunityMessage[]> {
+    return Array.from(this.communityMessages.values())
+      .filter(msg => msg.communityId === communityId)
+      .sort((a, b) => (new Date(a.createdAt as any).getTime()) - (new Date(b.createdAt as any).getTime()));
   }
 }
 

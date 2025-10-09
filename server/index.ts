@@ -1,6 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { WebSocketServer } from "ws";
+import { db } from "./db";
+import { communityMessages as communityMessagesTable } from "@shared/schema";
 
 const app = express();
 app.use(express.json());
@@ -83,6 +86,27 @@ app.use((req, res, next) => {
     server.listen(listenOptions, () => {
       server.off('error', onError);
       log(`serving on port ${candidatePort}`);
+
+      // Setup WebSocket for community chat
+      const wss = new WebSocketServer({ server });
+      wss.on('connection', (ws) => {
+        ws.on('message', async (raw) => {
+          try {
+            const msg = JSON.parse(raw.toString());
+            if (msg.type === 'community_message') {
+              const payload = { communityId: msg.communityId, authorId: msg.authorId, content: msg.content };
+              if (db) {
+                await db.insert(communityMessagesTable).values(payload).returning();
+              }
+              wss.clients.forEach((client) => {
+                if ((client as any).readyState === 1) {
+                  client.send(JSON.stringify({ type: 'community_message', ...payload, createdAt: new Date().toISOString() }));
+                }
+              });
+            }
+          } catch {}
+        });
+      });
     });
   };
 
