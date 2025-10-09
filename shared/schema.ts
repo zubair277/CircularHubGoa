@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, timestamp, boolean, jsonb, pgEnum, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,6 +15,7 @@ export const users = pgTable("users", {
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   phone: text("phone"),
   avatar: text("avatar"),
+  verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -149,6 +150,47 @@ export const userBadges = pgTable("user_badges", {
   earnedAt: timestamp("earned_at").defaultNow(),
 });
 
+// Communities
+export const communities = pgTable("communities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url"),
+  category: text("category"),
+  creatorId: varchar("creator_id").notNull().references(() => users.id),
+});
+
+export const communityMemberships = pgTable(
+  "community_memberships",
+  {
+    userId: varchar("user_id").notNull().references(() => users.id),
+    communityId: varchar("community_id").notNull().references(() => communities.id),
+    role: text("role").default("member"),
+    joinedAt: timestamp("joined_at").defaultNow(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.userId, t.communityId] }) }),
+);
+
+export const postTypeEnum = pgEnum("post_type", ["discussion", "offer", "request", "project"]);
+
+export const communityPosts = pgTable("community_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  type: postTypeEnum("type").default("discussion"),
+  content: text("content"),
+  createdAt: timestamp("created_at").defaultNow(),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  communityId: varchar("community_id").notNull().references(() => communities.id),
+});
+
+export const communityComments = pgTable("community_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  postId: varchar("post_id").notNull().references(() => communityPosts.id),
+});
+
 // ============== Zod Schemas ==============
 
 // Users
@@ -254,3 +296,20 @@ export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
 });
 export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
 export type UserBadge = typeof userBadges.$inferSelect;
+
+// Communities
+export const insertCommunitySchema = createInsertSchema(communities).omit({ id: true });
+export type InsertCommunity = z.infer<typeof insertCommunitySchema>;
+export type Community = typeof communities.$inferSelect;
+
+export const insertCommunityMembershipSchema = createInsertSchema(communityMemberships);
+export type InsertCommunityMembership = z.infer<typeof insertCommunityMembershipSchema>;
+export type CommunityMembership = typeof communityMemberships.$inferSelect;
+
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, createdAt: true });
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+export type CommunityPost = typeof communityPosts.$inferSelect;
+
+export const insertCommunityCommentSchema = createInsertSchema(communityComments).omit({ id: true, createdAt: true });
+export type InsertCommunityComment = z.infer<typeof insertCommunityCommentSchema>;
+export type CommunityComment = typeof communityComments.$inferSelect;

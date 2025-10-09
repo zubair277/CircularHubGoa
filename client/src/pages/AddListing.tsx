@@ -201,7 +201,40 @@ export default function AddListing() {
                   <MapView
                     listings={[]}
                     center={selectedLocation}
-                    onListingClick={(id) => console.log('Location selected:', id)}
+                    selectable
+                    onSelect={(coords) => {
+                      setSelectedLocation([coords.lat, coords.lng]);
+                      form.setValue("latitude", coords.lat, { shouldValidate: true });
+                      form.setValue("longitude", coords.lng, { shouldValidate: true });
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="latitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitude</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="any" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="longitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitude</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="any" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">

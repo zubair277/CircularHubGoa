@@ -5,6 +5,8 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  // Ensure Vite reads .env from the repo root instead of client/
+  envDir: path.resolve(import.meta.dirname),
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

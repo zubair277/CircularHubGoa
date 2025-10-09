@@ -2,6 +2,7 @@ import { useState } from "react";
 import ListingCard from "@/components/ListingCard";
 import MapView from "@/components/MapView";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, MapIcon, List } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -19,6 +20,7 @@ export default function Marketplace() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showChatFor, setShowChatFor] = useState<string | null>(null);
+  const [showScheduleFor, setShowScheduleFor] = useState<string | null>(null);
 
   const mockListings = [
     {
@@ -181,6 +183,7 @@ export default function Marketplace() {
           listing={mockListings.find(l => l.id === selectedId)!}
           onClose={() => setSelectedId(null)}
           onContact={() => setShowChatFor(selectedId)}
+          onSchedule={() => setShowScheduleFor(selectedId)}
         />
       )}
 
@@ -191,6 +194,13 @@ export default function Marketplace() {
           onClose={() => setShowChatFor(null)}
         />
       )}
+
+      {showScheduleFor && (
+        <ScheduleModal
+          listing={mockListings.find(l => l.id === showScheduleFor)!}
+          onClose={() => setShowScheduleFor(null)}
+        />
+      )}
     </div>
   );
 }
@@ -198,8 +208,9 @@ export default function Marketplace() {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
-function DetailsModal({ listing, onClose, onContact }: { listing: any; onClose: () => void; onContact: () => void }) {
+function DetailsModal({ listing, onClose, onContact, onSchedule }: { listing: any; onClose: () => void; onContact: () => void; onSchedule: () => void }) {
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-3xl">
@@ -216,7 +227,10 @@ function DetailsModal({ listing, onClose, onContact }: { listing: any; onClose: 
               <Badge variant="outline">{listing.status === 'available' ? 'Available' : listing.status}</Badge>
               <span className="text-sm">{listing.quantity} {listing.unit} available</span>
             </div>
-            <Button onClick={onContact} className="rounded-full">Contact Seller</Button>
+            <div className="flex gap-2">
+              <Button onClick={onContact} className="rounded-full">Contact Seller</Button>
+              <Button variant="outline" onClick={onSchedule} className="rounded-full">Schedule Pickup</Button>
+            </div>
           </div>
           <div className="h-72">
             <MapView
@@ -268,6 +282,50 @@ function ChatModal({ listing, onClose }: { listing: any; onClose: () => void }) 
           <div className="p-2 border-t flex gap-2">
             <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." className="h-10 resize-none" />
             <Button onClick={send} className="shrink-0 rounded-full">Send</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ScheduleModal({ listing, onClose }: { listing: any; onClose: () => void }) {
+  const [date, setDate] = useState<string>("");
+  const [time, setTime] = useState<string>("");
+  const [note, setNote] = useState<string>("");
+  const { toast } = useToast();
+
+  const submit = () => {
+    if (!date || !time) return;
+    console.log("Pickup scheduled:", { listingId: listing.id, date, time, note });
+    toast({
+      title: "Pickup scheduled",
+      description: `We notified ${listing.businessName}. ${new Date(date + 'T' + time).toLocaleString()}`,
+    });
+    onClose();
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Schedule Pickup</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-sm text-muted-foreground">Date</label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Time</label>
+              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            </div>
+          </div>
+          <Textarea placeholder="Pickup notes (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onClose} className="rounded-full">Cancel</Button>
+            <Button onClick={submit} className="rounded-full">Confirm</Button>
           </div>
         </div>
       </DialogContent>

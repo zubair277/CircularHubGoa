@@ -18,6 +18,16 @@ import {
   insertForumReplySchema,
   insertNotificationSchema,
   insertUserBadgeSchema,
+  // community
+  insertCommunitySchema,
+  insertCommunityMembershipSchema,
+  insertCommunityPostSchema,
+  insertCommunityCommentSchema,
+  communities as communitiesTable,
+  communityMemberships as communityMembershipsTable,
+  communityPosts as communityPostsTable,
+  communityComments as communityCommentsTable,
+  postTypeEnum,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -666,6 +676,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(badges);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== Community Routes ==========
+
+  // Create community
+  app.post("/api/communities", async (req, res) => {
+    try {
+      const data = insertCommunitySchema.parse(req.body);
+      if (db) {
+        const [row] = await db.insert(communitiesTable).values(data).returning();
+        return res.json(row);
+      }
+      const created = await storage.createCommunity(data as any);
+      res.json(created);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // List communities
+  app.get("/api/communities", async (_req, res) => {
+    try {
+      if (db) {
+        const rows = await db.select().from(communitiesTable);
+        return res.json(rows);
+      }
+      const rows = await storage.getCommunities();
+      res.json(rows);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Join community
+  app.post("/api/communities/:id/join", async (req, res) => {
+    try {
+      const data = insertCommunityMembershipSchema.parse({ communityId: req.params.id, userId: req.body.userId });
+      if (db) {
+        const [row] = await db.insert(communityMembershipsTable).values(data).returning();
+        return res.json(row);
+      }
+      const row = await storage.joinCommunity(data as any);
+      res.json(row);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // Create post
+  app.post("/api/communities/:id/posts", async (req, res) => {
+    try {
+      const data = insertCommunityPostSchema.parse({ ...req.body, communityId: req.params.id });
+      if (db) {
+        const [row] = await db.insert(communityPostsTable).values(data).returning();
+        return res.json(row);
+      }
+      const row = await storage.createCommunityPost(data as any);
+      res.json(row);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // List posts in a community (optional type filter)
+  app.get("/api/communities/:id/posts", async (req, res) => {
+    try {
+      const type = typeof req.query.type === 'string' ? req.query.type : undefined;
+      if (db) {
+        const rows = await db.select().from(communityPostsTable).where(eq(communityPostsTable.communityId, req.params.id));
+        return res.json(type ? rows.filter(r => (r as any).type === type) : rows);
+      }
+      const rows = await storage.getCommunityPosts(req.params.id);
+      res.json(type ? rows.filter(r => (r as any).type === type) : rows);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Comment on post
+  app.post("/api/community/posts/:postId/comments", async (req, res) => {
+    try {
+      const data = insertCommunityCommentSchema.parse({ ...req.body, postId: req.params.postId });
+      if (db) {
+        const [row] = await db.insert(communityCommentsTable).values(data).returning();
+        return res.json(row);
+      }
+      const row = await storage.createCommunityComment(data as any);
+      res.json(row);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
     }
   });
 

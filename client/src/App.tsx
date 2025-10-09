@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ThemeToggle from "@/components/ThemeToggle";
 import Navbar from "@/components/Navbar";
+import Community from "@/pages/Community";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import Marketplace from "@/pages/Marketplace";
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/marketplace" component={Marketplace} />
+      <Route path="/community" component={Community} />
       <Route path="/add-listing" component={AddListing} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />

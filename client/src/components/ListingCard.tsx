@@ -44,34 +44,30 @@ export default function ListingCard({ listing, onViewDetails, onContact }: Listi
   const categoryColor = categoryColors[listing.category.toLowerCase()] || "bg-muted text-muted-foreground";
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-2xl" data-testid={`card-listing-${listing.id}`}>
+    <Card className="overflow-hidden rounded-2xl border bg-card/80 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-primary/20" data-testid={`card-listing-${listing.id}`}>
       <div className="relative">
         {listing.imageUrl && (
-          <div className="h-48 overflow-hidden">
+          <div className="aspect-[16/10] overflow-hidden">
             <img
               src={listing.imageUrl}
               alt={listing.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
             />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-transparent" />
           </div>
         )}
-        <Badge
-          className={`absolute top-3 right-3 ${categoryColor} border`}
-          data-testid={`badge-category-${listing.id}`}
-        >
-          {listing.category}
-        </Badge>
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <Badge className={`${categoryColor} border`}>{listing.category}</Badge>
+        </div>
+        <div className="absolute top-3 right-3">
+          <Badge variant="outline" className={`${statusInfo.className} border`}>{statusInfo.label}</Badge>
+        </div>
       </div>
 
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-lg leading-tight" data-testid={`text-title-${listing.id}`}>
-            {listing.title}
-          </h3>
-          <Badge variant="outline" className={`${statusInfo.className} border shrink-0`}>
-            {statusInfo.label}
-          </Badge>
-        </div>
+      <CardHeader className="pb-2">
+        <h3 className="font-semibold text-lg leading-tight" data-testid={`text-title-${listing.id}`}>
+          {listing.title}
+        </h3>
       </CardHeader>
 
       <CardContent className="pb-3">
@@ -98,7 +94,7 @@ export default function ListingCard({ listing, onViewDetails, onContact }: Listi
         </div>
       </CardContent>
 
-      <CardFooter className="pt-3 flex items-center justify-between gap-2 border-t">
+      <CardFooter className="pt-3 flex items-center justify-between gap-2 border-t bg-muted/30">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           {listing.distance !== undefined ? (
             <>
@@ -115,16 +111,18 @@ export default function ListingCard({ listing, onViewDetails, onContact }: Listi
 
         <div className="flex gap-2">
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => onViewDetails?.(listing.id)}
-            className="rounded-full"
+            className="rounded-full hover:shadow"
             data-testid={`button-view-${listing.id}`}
           >
             View
           </Button>
           {listing.status === "available" && (
             <Button
+              type="button"
               variant="default"
               size="sm"
               onClick={() => onContact?.(listing.id)}

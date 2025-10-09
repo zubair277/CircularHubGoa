@@ -24,6 +24,15 @@ import {
   type InsertNotification,
   type UserBadge,
   type InsertUserBadge,
+  // community
+  type Community,
+  type InsertCommunity,
+  type CommunityMembership,
+  type InsertCommunityMembership,
+  type CommunityPost,
+  type InsertCommunityPost,
+  type CommunityComment,
+  type InsertCommunityComment,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -40,6 +49,10 @@ import {
   forumReplies as forumRepliesTable,
   notifications as notificationsTable,
   userBadges as userBadgesTable,
+  communities as communitiesTable,
+  communityMemberships as communityMembershipsTable,
+  communityPosts as communityPostsTable,
+  communityComments as communityCommentsTable,
 } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -116,6 +129,16 @@ export interface IStorage {
   // Badges
   createUserBadge(badge: InsertUserBadge): Promise<UserBadge>;
   getBadgesByUser(userId: string): Promise<UserBadge[]>;
+
+  // Community
+  createCommunity(c: InsertCommunity): Promise<Community>;
+  getCommunities(): Promise<Community[]>;
+  joinCommunity(m: InsertCommunityMembership): Promise<CommunityMembership>;
+  getCommunityMembers(communityId: string): Promise<CommunityMembership[]>;
+  createCommunityPost(p: InsertCommunityPost): Promise<CommunityPost>;
+  getCommunityPosts(communityId: string): Promise<CommunityPost[]>;
+  createCommunityComment(c: InsertCommunityComment): Promise<CommunityComment>;
+  getCommentsByPost(postId: string): Promise<CommunityComment[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -131,6 +154,10 @@ export class MemStorage implements IStorage {
   private forumReplies: Map<string, ForumReply>;
   private notifications: Map<string, Notification>;
   private userBadges: Map<string, UserBadge>;
+  private communities: Map<string, Community>;
+  private communityMemberships: Map<string, CommunityMembership>;
+  private communityPosts: Map<string, CommunityPost>;
+  private communityComments: Map<string, CommunityComment>;
 
   constructor() {
     this.users = new Map();
@@ -145,6 +172,10 @@ export class MemStorage implements IStorage {
     this.forumReplies = new Map();
     this.notifications = new Map();
     this.userBadges = new Map();
+    this.communities = new Map();
+    this.communityMemberships = new Map();
+    this.communityPosts = new Map();
+    this.communityComments = new Map();
   }
 
   // Users
@@ -561,6 +592,51 @@ export class MemStorage implements IStorage {
     return Array.from(this.userBadges.values()).filter(
       (badge) => badge.userId === userId,
     );
+  }
+
+  // Community
+  async createCommunity(insert: InsertCommunity): Promise<Community> {
+    const id = randomUUID();
+    const c: Community = { ...insert, imageUrl: insert.imageUrl ?? null, id } as any;
+    this.communities.set(id, c);
+    return c;
+  }
+
+  async getCommunities(): Promise<Community[]> {
+    return Array.from(this.communities.values());
+  }
+
+  async joinCommunity(m: InsertCommunityMembership): Promise<CommunityMembership> {
+    const key = `${m.userId}:${m.communityId}`;
+    const row: CommunityMembership = { ...m, joinedAt: new Date() } as any;
+    this.communityMemberships.set(key, row);
+    return row;
+  }
+
+  async getCommunityMembers(communityId: string): Promise<CommunityMembership[]> {
+    return Array.from(this.communityMemberships.values()).filter(m => m.communityId === communityId);
+  }
+
+  async createCommunityPost(p: InsertCommunityPost): Promise<CommunityPost> {
+    const id = randomUUID();
+    const row: CommunityPost = { ...p, id, createdAt: new Date() } as any;
+    this.communityPosts.set(id, row);
+    return row;
+  }
+
+  async getCommunityPosts(communityId: string): Promise<CommunityPost[]> {
+    return Array.from(this.communityPosts.values()).filter(p => p.communityId === communityId);
+  }
+
+  async createCommunityComment(c: InsertCommunityComment): Promise<CommunityComment> {
+    const id = randomUUID();
+    const row: CommunityComment = { ...c, id, createdAt: new Date() } as any;
+    this.communityComments.set(id, row);
+    return row;
+  }
+
+  async getCommentsByPost(postId: string): Promise<CommunityComment[]> {
+    return Array.from(this.communityComments.values()).filter(c => c.postId === postId);
   }
 }
 
