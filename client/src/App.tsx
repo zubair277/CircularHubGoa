@@ -35,8 +35,8 @@ function Router() {
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for testing
+  const [userName, setUserName] = useState<string | undefined>("Demo User");
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleLogout = () => {
