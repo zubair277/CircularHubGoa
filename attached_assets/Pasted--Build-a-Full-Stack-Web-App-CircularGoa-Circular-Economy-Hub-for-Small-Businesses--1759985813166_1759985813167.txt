@@ -1,0 +1,147 @@
+# 🚀 Build a Full-Stack Web App: "CircularGoa" — Circular Economy Hub for Small Businesses
+
+## 🧠 Overview
+Create a full-stack web app called **CircularGoa**, a B2B platform for **local tourism businesses in Goa** (restaurants, hotels, artists, recyclers) to **exchange waste and surplus materials**.  
+Goal: Reduce landfill waste and enable a local **circular economy**.
+
+---
+
+## 💻 Tech Stack
+- **Frontend:** React.js (Vite), Tailwind CSS, Shadcn/UI or Material UI, React Router, React Query, Axios, React-Leaflet (OpenStreetMap)
+- **Backend:** Node.js + Express.js + Prisma ORM + PostgreSQL (Supabase or Neon)
+- **Auth:** Supabase Auth (email + Google login)
+- **Optional:** Socket.io for real-time notifications
+- **Deployment:** Frontend → Vercel, Backend + DB → Supabase or Render
+
+---
+
+## 🎨 UI / Theme
+Design a **clean, tropical Goa-themed interface**:
+- Colors: **Pink (#FDE2E4)**, **Eco Green (#68B684)**, **Aqua Blue (#A8DADC)**, white backgrounds  
+- Font: “Poppins” or “Inter”  
+- Rounded cards, soft shadows, minimalist layout  
+- Mobile responsive  
+
+**Pages:**
+1. Home / Dashboard (metrics overview)  
+2. Marketplace (browse + map view)  
+3. Add Listing (post waste/surplus)  
+4. My Listings (manage posts)  
+5. Profile (business info + stats)
+
+**Components:** Navbar, ListingCard, MapView, DashboardStats, AuthModal
+
+---
+
+## ⚙️ Backend / API Design
+
+### Endpoints
+| Method | Endpoint | Description |
+|---------|-----------|-------------|
+| POST | `/api/auth/register` | Register business |
+| POST | `/api/auth/login` | Login user |
+| GET | `/api/listings` | Fetch all listings |
+| POST | `/api/listings` | Create new listing |
+| PUT | `/api/listings/:id` | Update listing |
+| GET | `/api/match` | Find nearby matches by location & category |
+
+### Database (Prisma Models)
+```prisma
+model User {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String   @unique
+  passwordHash   String
+  businessType   String
+  latitude       Float
+  longitude      Float
+  listings       Listing[]
+  createdAt      DateTime @default(now())
+}
+
+model Listing {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  title          String
+  category       String
+  description    String
+  quantity       Float
+  latitude       Float
+  longitude      Float
+  status         String   @default("available")
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id])
+}
+Matching Logic
+Use coordinates (lat/lon) to find listings within ~5km using geolib or PostGIS functions.
+
+Return JSON of nearby matches for exchange.
+
+📊 Dashboard
+Show simple analytics:
+
+Total waste diverted (sum of quantities)
+
+Estimated CO₂ saved (mock formula)
+
+Number of exchanges completed
+Use Recharts or Chart.js for visuals.
+
+🧩 Folder Structure
+pgsql
+Copy code
+circular-goa/
+├── client/ (React frontend)
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── hooks/
+│   │   ├── context/
+│   │   ├── utils/
+│   │   └── App.jsx
+│   └── package.json
+│
+└── server/ (Node backend)
+    ├── src/
+    │   ├── routes/
+    │   ├── controllers/
+    │   ├── models/
+    │   └── app.js
+    ├── prisma/
+    └── package.json
+🔔 Optional Add-ons
+Real-time updates (Socket.io)
+
+Email alerts (Nodemailer or Supabase functions)
+
+QR codes for pickup verification
+
+Reward system (“Green Points”)
+
+Dark Mode toggle 🌙
+
+✅ Final Deliverable
+A fully working full-stack app where users can:
+
+Register/Login
+
+Post waste or surplus items
+
+Browse/map other listings nearby
+
+See sustainability metrics on dashboard
+
+Focus on clean UI, working CRUD, and basic geo-matching first.
+Code must be modular, well-commented, and deployment-ready with .env setup.
+
+🧠 Build Priority
+Auth + Listings CRUD ✅
+
+Map display + matching ✅
+
+Dashboard stats ✅
+
+Optional realtime & notifications 💬
+
+Name the final project: CircularGoa
+Mission: Build a hackathon-ready prototype promoting sustainability and circular economy among Goa’s small businesses. 🌴♻️
