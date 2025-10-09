@@ -37,6 +37,8 @@ import {
   type InsertCommunityComment,
   type CommunityMessage,
   type InsertCommunityMessage,
+  type Conversation,
+  type InsertConversation,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -45,6 +47,7 @@ import {
   listings as listingsTable,
   claims as claimsTable,
   alerts as alertsTable,
+  conversations as conversationsTable,
   messages as messagesTable,
   ratings as ratingsTable,
   pickups as pickupsTable,
@@ -158,6 +161,14 @@ export interface IStorage {
   getAlertsByUser(userId: string): Promise<Alert[]>;
   deleteAlert(id: string): Promise<boolean>;
   getAllActiveAlerts(): Promise<Alert[]>;
+
+  // Conversations
+  createConversation(c: InsertConversation): Promise<Conversation>;
+  getConversationsByUser(userId: string): Promise<Conversation[]>;
+  getConversation(id: string): Promise<Conversation | undefined>;
+  getMessagesByConversation(conversationId: string): Promise<Message[]>;
+  createMessage(m: InsertMessage): Promise<Message>;
+  markMessageAsRead(messageId: string): Promise<Message | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -179,7 +190,7 @@ export class MemStorage implements IStorage {
   private communityComments: Map<string, CommunityComment>;
   private communityMessages: Map<string, CommunityMessage>;
   private deliveryRequests: Map<string, DeliveryRequest>;
-  private alerts: Map<string, Alert>;
+  private conversations: Map<string, Conversation>;
 
   constructor() {
     this.users = new Map();
@@ -200,7 +211,7 @@ export class MemStorage implements IStorage {
     this.communityComments = new Map();
     this.communityMessages = new Map();
     this.deliveryRequests = new Map();
-    this.alerts = new Map();
+    this.conversations = new Map();
   }
 
   // Users
@@ -364,6 +375,35 @@ export class MemStorage implements IStorage {
     return this.alerts.delete(id);
   }
 
+  // Conversations
+  async createConversation(insert: InsertConversation): Promise<Conversation> {
+    const id = randomUUID();
+    const conversation: Conversation = { 
+      ...insert, 
+      id, 
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.conversations.set(id, conversation);
+    return conversation;
+  }
+
+  async getConversationsByUser(userId: string): Promise<Conversation[]> {
+    return Array.from(this.conversations.values()).filter(conv => 
+      (conv.participants as string[]).includes(userId)
+    );
+  }
+
+  async getConversation(id: string): Promise<Conversation | undefined> {
+    return this.conversations.get(id);
+  }
+
+  async getMessagesByConversation(conversationId: string): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(msg => msg.conversationId === conversationId)
+      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
+  }
+
   // Messages
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     const id = randomUUID();
@@ -375,6 +415,14 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.messages.set(id, message);
+    
+    // Update conversation's updatedAt timestamp
+    const conversation = this.conversations.get(insertMessage.conversationId);
+    if (conversation) {
+      conversation.updatedAt = new Date();
+      this.conversations.set(insertMessage.conversationId, conversation);
+    }
+    
     return message;
   }
 
@@ -635,25 +683,6 @@ export class MemStorage implements IStorage {
     return Array.from(this.deliveryRequests.values()).filter(d => d.listingId === listingId);
   }
 
-  // Alerts
-  async createAlert(insert: InsertAlert): Promise<Alert> {
-    const id = randomUUID();
-    const alert: Alert = { ...insert, id, isActive: true, createdAt: new Date() } as any;
-    this.alerts.set(id, alert);
-    return alert;
-  }
-
-  async getAlertsByUser(userId: string): Promise<Alert[]> {
-    return Array.from(this.alerts.values()).filter(a => a.userId === userId);
-  }
-
-  async deleteAlert(id: string): Promise<boolean> {
-    return this.alerts.delete(id);
-  }
-
-  async getAllActiveAlerts(): Promise<Alert[]> {
-    return Array.from(this.alerts.values()).filter(a => a.isActive);
-  }
 
   // Helper method to check alerts for a new listing
   async checkAlertsForListing(listing: Listing): Promise<void> {

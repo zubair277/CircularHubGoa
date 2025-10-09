@@ -19,6 +19,8 @@ import {
   insertNotificationSchema,
   insertUserBadgeSchema,
   insertDeliveryRequestSchema,
+  insertConversationSchema,
+  insertMessageSchema,
   // community
   insertCommunitySchema,
   insertCommunityMembershipSchema,
@@ -28,6 +30,8 @@ import {
   communityMemberships as communityMembershipsTable,
   communityPosts as communityPostsTable,
   communityComments as communityCommentsTable,
+  conversations as conversationsTable,
+  messages as messagesTable,
   postTypeEnum,
 } from "@shared/schema";
 
@@ -802,6 +806,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ========== Conversations & Messages ==========
+  app.get("/api/conversations", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      const conversations = await storage.getConversationsByUser(userId as string);
+      res.json(conversations);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/conversations", async (req, res) => {
+    try {
+      const data = insertConversationSchema.parse(req.body);
+      const conversation = await storage.createConversation(data as any);
+      res.json(conversation);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/messages/:conversationId", async (req, res) => {
+    try {
+      const messages = await storage.getMessagesByConversation(req.params.conversationId);
+      res.json(messages);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/messages", async (req, res) => {
+    try {
+      const data = insertMessageSchema.parse(req.body);
+      const message = await storage.createMessage(data as any);
+      res.json(message);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/offers", async (req, res) => {
+    try {
+      const { conversationId, senderId, offerAmount, content } = req.body;
+      const data = insertMessageSchema.parse({
+        conversationId,
+        senderId,
+        content,
+        type: "offer",
+        offerAmount: offerAmount?.toString(),
+      });
+      const message = await storage.createMessage(data as any);
+      res.json(message);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
     }
   });
 

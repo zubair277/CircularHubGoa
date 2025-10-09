@@ -64,12 +64,22 @@ export const alerts = pgTable("alerts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Messages/Chat
+// Conversations table
+export const conversations = pgTable("conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participants: jsonb("participants").notNull(), // Array of user IDs
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Messages/Chat (updated to support conversations and offers)
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => conversations.id),
   senderId: varchar("sender_id").notNull().references(() => users.id),
-  receiverId: varchar("receiver_id").notNull().references(() => users.id),
-  content: text("content").notNull(),
+  content: text("content"),
+  type: varchar("type").default("text"), // 'text' | 'offer'
+  offerAmount: decimal("offer_amount", { precision: 10, scale: 2 }),
   isRead: boolean("is_read").notNull().default(false),
   relatedClaimId: varchar("related_claim_id").references(() => claims.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -250,6 +260,15 @@ export const updateAlertSchema = insertAlertSchema.partial();
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
 export type UpdateAlert = z.infer<typeof updateAlertSchema>;
 export type Alert = typeof alerts.$inferSelect;
+
+// Conversations
+export const insertConversationSchema = createInsertSchema(conversations).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = typeof conversations.$inferSelect;
 
 // Messages
 export const insertMessageSchema = createInsertSchema(messages).omit({ 

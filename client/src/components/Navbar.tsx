@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Leaf, MapPin, Plus, LayoutDashboard, User, LogOut, Users, Truck, List, Bell, Trash2 } from "lucide-react";
+import { Leaf, MapPin, Plus, LayoutDashboard, User, LogOut, Users, Truck, List, Bell, Trash2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +68,7 @@ export default function Navbar({
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
     { path: "/marketplace", label: "Marketplace", icon: MapPin },
     { path: "/my-listings", label: "My Listings", icon: List },
+    { path: "/messages", label: "Messages", icon: MessageSquare },
     { path: "/community", label: "Community", icon: Users },
     { path: "/logistics", label: "Logistics", icon: Truck },
     { path: "/add-listing", label: "Add Listing", icon: Plus },

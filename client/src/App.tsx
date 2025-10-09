@@ -11,6 +11,7 @@ import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import Marketplace from "@/pages/Marketplace";
 import MyListings from "@/pages/MyListings";
+import Messages from "@/pages/Messages";
 import AddListing from "@/pages/AddListing";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/marketplace" component={Marketplace} />
       <Route path="/my-listings" component={MyListings} />
+      <Route path="/messages" component={Messages} />
       <Route path="/community" component={Community} />
       <Route path="/logistics" component={Logistics} />
       <Route path="/add-listing" component={AddListing} />

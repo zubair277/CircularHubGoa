@@ -87,7 +87,7 @@ app.use((req, res, next) => {
       server.off('error', onError);
       log(`serving on port ${candidatePort}`);
 
-      // Setup WebSocket for community chat
+      // Setup WebSocket for community chat and messaging
       const wss = new WebSocketServer({ server });
       wss.on('connection', (ws) => {
         ws.on('message', async (raw) => {
@@ -101,6 +101,25 @@ app.use((req, res, next) => {
               wss.clients.forEach((client) => {
                 if ((client as any).readyState === 1) {
                   client.send(JSON.stringify({ type: 'community_message', ...payload, createdAt: new Date().toISOString() }));
+                }
+              });
+            } else if (msg.type === 'message') {
+              // Handle real-time messaging
+              const payload = { 
+                conversationId: msg.conversationId, 
+                senderId: msg.senderId, 
+                content: msg.content,
+                type: msg.messageType || 'text',
+                offerAmount: msg.offerAmount
+              };
+              wss.clients.forEach((client) => {
+                if ((client as any).readyState === 1) {
+                  client.send(JSON.stringify({ 
+                    type: 'message', 
+                    ...payload, 
+                    id: msg.id || 'temp-id',
+                    createdAt: new Date().toISOString() 
+                  }));
                 }
               });
             }
