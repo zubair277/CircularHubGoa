@@ -10,6 +10,7 @@ import Community from "@/pages/Community";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import Marketplace from "@/pages/Marketplace";
+import MyListings from "@/pages/MyListings";
 import AddListing from "@/pages/AddListing";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/marketplace" component={Marketplace} />
+      <Route path="/my-listings" component={MyListings} />
       <Route path="/community" component={Community} />
       <Route path="/logistics" component={Logistics} />
       <Route path="/add-listing" component={AddListing} />

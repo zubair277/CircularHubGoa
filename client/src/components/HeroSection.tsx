@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Leaf, ArrowRight, Recycle, Users } from "lucide-react";
-import heroImage from "@assets/stock_images/goa_india_coastal_be_f1b6d957.jpg";
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -12,7 +11,11 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
     <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroImage})` }}
+        style={{ 
+          backgroundImage: `url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1920&h=1080&fit=crop&crop=center')`,
+          backgroundPosition: 'center',
+          backgroundSize: 'cover'
+        }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
       

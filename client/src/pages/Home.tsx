@@ -48,101 +48,185 @@ export default function Home() {
       title: "Cardboard Boxes",
       category: "Paper",
       description: "Sturdy boxes from art supplies",
-      quantity: 30,
-      unit: "pieces",
-      distance: 1.5,
-      businessName: "Goa Art Gallery",
-      businessType: "Artist",
+      quantity: 100,
+      unit: "units",
+      distance: 1.8,
+      businessName: "Goa Art Studio",
+      businessType: "Retail",
       status: "available" as const,
       createdAt: new Date().toISOString(),
-      imageUrl: "https://images.unsplash.com/photo-1553620591-d0e8ba5d3f5a?w=400&h=300&fit=crop",
-      latitude: 15.4800,
-      longitude: 73.8400,
+      imageUrl: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=300&fit=crop",
+      latitude: 15.5000,
+      longitude: 73.8300,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <HeroSection
+    <div className="min-h-screen">
+      <HeroSection 
         onGetStarted={() => setAuthModalOpen(true)}
-        onLearnMore={() => console.log('Learn more')}
+        onLearnMore={() => window.scrollTo({ top: 600, behavior: 'smooth' })}
       />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Why CircularGoa?</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join Goa's growing community of sustainable businesses working together to reduce waste and create value.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <Card className="text-center rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-            <CardContent className="pt-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingDown className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Reduce Costs</h3>
-              <p className="text-muted-foreground">
-                Save money by exchanging materials instead of disposing them
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-            <CardContent className="pt-6">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Build Network</h3>
-              <p className="text-muted-foreground">
-                Connect with nearby businesses and create partnerships
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-            <CardContent className="pt-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Leaf className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Go Green</h3>
-              <p className="text-muted-foreground">
-                Contribute to Goa's sustainability and reduce your carbon footprint
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold">Featured Listings</h2>
-            <Link href="/marketplace">
-              <Button variant="outline" className="gap-2 rounded-full">
-                View All
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
+      
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Featured Listings
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Discover materials from local businesses ready for exchange
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
             {featuredListings.map((listing) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
-                onViewDetails={(id) => console.log('View:', id)}
-                onContact={() => setAuthModalOpen(true)}
+                onViewDetails={(id) => console.log('View details:', id)}
+                onContact={(id) => console.log('Contact:', id)}
               />
             ))}
           </div>
+          
+          <div className="text-center">
+            <Button asChild size="lg">
+              <Link href="/marketplace">
+                View All Listings
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              How It Works
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Join Goa's circular economy in three simple steps
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-primary">1</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">List Your Materials</h3>
+              <p className="text-gray-600">
+                Post your surplus or waste materials with photos and details
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-primary">2</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Connect & Exchange</h3>
+              <p className="text-gray-600">
+                Find businesses that need your materials and arrange pickup
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-primary">3</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Build Circular Economy</h3>
+              <p className="text-gray-600">
+                Create sustainable business relationships and reduce waste
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Why Choose CircularGoa?
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-1">
+                    <Leaf className="w-3 h-3 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Environmental Impact</h3>
+                    <p className="text-gray-600">
+                      Reduce landfill waste and promote sustainable practices in Goa
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-1">
+                    <Users className="w-3 h-3 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Local Community</h3>
+                    <p className="text-gray-600">
+                      Connect with local businesses and build stronger community ties
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-1">
+                    <TrendingDown className="w-3 h-3 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Cost Savings</h3>
+                    <p className="text-gray-600">
+                      Save on disposal costs and discover valuable materials for free
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Ready to Get Started?
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Join hundreds of Goan businesses already participating in the circular economy
+              </p>
+              <div className="space-y-3">
+                <Button asChild className="w-full">
+                  <Link href="/add-listing">Add Your First Listing</Link>
+                </Button>
+                <Button variant="outline" asChild className="w-full">
+                  <Link href="/marketplace">Browse Marketplace</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <AuthModal
         open={authModalOpen}
         onOpenChange={setAuthModalOpen}
-        onLogin={(email, password) => console.log('Login:', { email, password })}
-        onRegister={(data) => console.log('Register:', data)}
-        onGoogleAuth={() => console.log('Google auth')}
+        onLogin={(email, password) => {
+          console.log('Login:', email, password);
+          setAuthModalOpen(false);
+        }}
+        onRegister={(data) => {
+          console.log('Register:', data);
+          setAuthModalOpen(false);
+        }}
+        onGoogleAuth={() => {
+          console.log('Google auth');
+          setAuthModalOpen(false);
+        }}
       />
     </div>
   );

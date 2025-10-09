@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { users as usersTable, listings as listingsTable, insertUserSchema } from "@shared/schema";
+import { users as usersTable, listings as listingsTable, claims, insertUserSchema } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 import { findMatchingAlerts } from "./utils";
 import { 
@@ -119,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get listings by user
+  // Get listings by user with progress tracking
   app.get("/api/listings/user/:userId", async (req, res) => {
     try {
       if (database) {
@@ -129,6 +129,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(listingsTable.userId, req.params.userId));
         return res.json(rows);
       }
+      const listings = await storage.getListingsByUser(req.params.userId);
+      res.json(listings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get user listings with progress and claims data
+  app.get("/api/listings/user/:userId/with-progress", async (req, res) => {
+    try {
+      if (database) {
+        // Get user's listings
+        const listings = await database
+          .select()
+          .from(listingsTable)
+          .where(eq(listingsTable.userId, req.params.userId))
+          .orderBy(listingsTable.createdAt);
+
+        // Get claims for each listing
+        const listingsWithProgress = await Promise.all(
+          listings.map(async (listing) => {
+            const claimsData = await database
+              .select()
+              .from(claims)
+              .where(eq(claims.listingId, listing.id));
+
+            // Calculate progress
+            const hasClaims = claimsData.length > 0;
+            const hasAcceptedClaim = claimsData.some((claim: any) => claim.status === 'accepted');
+            const isCompleted = listing.status === 'completed';
+
+            let progressPercentage = 0;
+            let statusLabel = 'Available';
+            let statusColor = 'bg-green-100 text-green-800';
+
+            if (isCompleted) {
+              progressPercentage = 100;
+              statusLabel = 'Completed';
+              statusColor = 'bg-blue-100 text-blue-800';
+            } else if (hasAcceptedClaim) {
+              progressPercentage = 75;
+              statusLabel = 'Claimed';
+              statusColor = 'bg-yellow-100 text-yellow-800';
+            } else if (hasClaims) {
+              progressPercentage = 50;
+              statusLabel = 'Under Review';
+              statusColor = 'bg-orange-100 text-orange-800';
+            } else {
+              progressPercentage = 25;
+              statusLabel = 'Available';
+              statusColor = 'bg-green-100 text-green-800';
+            }
+
+            return {
+              ...listing,
+              claims: claimsData,
+              progressPercentage,
+              statusLabel,
+              statusColor,
+            };
+          })
+        );
+
+        return res.json(listingsWithProgress);
+      }
+
+      // Fallback to storage
       const listings = await storage.getListingsByUser(req.params.userId);
       res.json(listings);
     } catch (error: any) {
