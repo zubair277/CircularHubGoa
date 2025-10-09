@@ -15,7 +15,7 @@ interface StatCardProps {
 
 function StatCard({ title, value, subtitle, trend, icon, accentColor }: StatCardProps) {
   return (
-    <Card className="border-l-4" style={{ borderLeftColor: `hsl(var(--${accentColor}))` }}>
+    <Card className="border-l-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden relative" style={{ borderLeftColor: `hsl(var(--${accentColor}))` }}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <div className="p-2 rounded-lg bg-muted/50">

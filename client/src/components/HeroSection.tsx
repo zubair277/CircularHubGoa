@@ -37,7 +37,7 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
           <Button
             size="lg"
             onClick={onGetStarted}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground border border-primary-border gap-2 backdrop-blur-sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground border border-primary-border gap-2 backdrop-blur-sm rounded-full px-8 shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-105"
             data-testid="button-hero-get-started"
           >
             Get Started
@@ -47,7 +47,7 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
             size="lg"
             variant="outline"
             onClick={onLearnMore}
-            className="backdrop-blur-sm bg-white/20 border-white/40 text-white hover:bg-white/30"
+            className="backdrop-blur-sm bg-white/20 border-white/40 text-white hover:bg-white/30 rounded-full px-8 shadow-xl transition-all duration-300 hover:scale-105"
             data-testid="button-hero-learn-more"
           >
             Learn More
@@ -55,20 +55,20 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
-          <div className="backdrop-blur-sm bg-white/10 rounded-lg p-4 border border-white/20">
-            <Recycle className="w-8 h-8 text-primary mb-2 mx-auto" />
-            <h3 className="font-semibold mb-1">Reduce Waste</h3>
-            <p className="text-sm text-white/80">Divert materials from landfills</p>
+          <div className="backdrop-blur-md bg-white/10 rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:-translate-y-1">
+            <Recycle className="w-10 h-10 text-primary mb-3 mx-auto" />
+            <h3 className="font-semibold mb-2">Reduce Waste</h3>
+            <p className="text-sm text-white/90">Divert materials from landfills</p>
           </div>
-          <div className="backdrop-blur-sm bg-white/10 rounded-lg p-4 border border-white/20">
-            <Users className="w-8 h-8 text-accent mb-2 mx-auto" />
-            <h3 className="font-semibold mb-1">Build Community</h3>
-            <p className="text-sm text-white/80">Connect with local businesses</p>
+          <div className="backdrop-blur-md bg-white/10 rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:-translate-y-1">
+            <Users className="w-10 h-10 text-accent mb-3 mx-auto" />
+            <h3 className="font-semibold mb-2">Build Community</h3>
+            <p className="text-sm text-white/90">Connect with local businesses</p>
           </div>
-          <div className="backdrop-blur-sm bg-white/10 rounded-lg p-4 border border-white/20">
-            <Leaf className="w-8 h-8 text-primary mb-2 mx-auto" />
-            <h3 className="font-semibold mb-1">Save Resources</h3>
-            <p className="text-sm text-white/80">Lower costs and emissions</p>
+          <div className="backdrop-blur-md bg-white/10 rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:-translate-y-1">
+            <Leaf className="w-10 h-10 text-primary mb-3 mx-auto" />
+            <h3 className="font-semibold mb-2">Save Resources</h3>
+            <p className="text-sm text-white/90">Lower costs and emissions</p>
           </div>
         </div>
       </div>

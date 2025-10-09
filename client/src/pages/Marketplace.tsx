@@ -132,6 +132,7 @@ export default function Marketplace() {
               variant={viewMode === "list" ? "default" : "outline"}
               size="icon"
               onClick={() => setViewMode("list")}
+              className="rounded-full transition-all duration-300"
               data-testid="button-view-list"
             >
               <List className="w-4 h-4" />
@@ -140,6 +141,7 @@ export default function Marketplace() {
               variant={viewMode === "map" ? "default" : "outline"}
               size="icon"
               onClick={() => setViewMode("map")}
+              className="rounded-full transition-all duration-300"
               data-testid="button-view-map"
             >
               <MapIcon className="w-4 h-4" />

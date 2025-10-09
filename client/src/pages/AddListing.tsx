@@ -71,7 +71,7 @@ export default function AddListing() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
               <CardHeader>
                 <CardTitle>Listing Details</CardTitle>
                 <CardDescription>Provide information about the materials you want to exchange</CardDescription>
@@ -188,7 +188,7 @@ export default function AddListing() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
@@ -211,10 +211,10 @@ export default function AddListing() {
             </Card>
 
             <div className="flex gap-4 justify-end">
-              <Button type="button" variant="outline" onClick={() => form.reset()} data-testid="button-cancel">
+              <Button type="button" variant="outline" onClick={() => form.reset()} className="rounded-full" data-testid="button-cancel">
                 Cancel
               </Button>
-              <Button type="submit" data-testid="button-submit">
+              <Button type="submit" className="rounded-full shadow-lg hover:shadow-xl transition-all duration-300" data-testid="button-submit">
                 Publish Listing
               </Button>
             </div>

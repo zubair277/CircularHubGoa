@@ -61,7 +61,7 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Track your sustainability impact</p>
           </div>
           <Link href="/add-listing">
-            <Button className="gap-2" data-testid="button-add-listing">
+            <Button className="gap-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" data-testid="button-add-listing">
               <Plus className="w-4 h-4" />
               Add Listing
             </Button>
@@ -71,7 +71,7 @@ export default function Dashboard() {
         <DashboardStats />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-          <Card>
+          <Card className="rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle>Monthly Waste Diverted</CardTitle>
             </CardHeader>
@@ -94,7 +94,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle>Materials by Category</CardTitle>
             </CardHeader>
@@ -124,7 +124,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold">Your Recent Listings</h2>
             <Link href="/my-listings">
-              <Button variant="outline" data-testid="button-view-all">View All</Button>
+              <Button variant="outline" className="rounded-full" data-testid="button-view-all">View All</Button>
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -34,12 +34,14 @@ export default function Navbar({
   ];
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
+    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-background/70 border-b border-border/50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-3 py-2 -ml-3" data-testid="link-home">
-            <Leaf className="w-7 h-7 text-primary" />
-            <span className="text-xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-full px-3 py-2 -ml-3 transition-all duration-300" data-testid="link-home">
+            <div className="w-9 h-9 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center shadow-md">
+              <Leaf className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
               CircularGoa
             </span>
           </Link>
@@ -52,7 +54,7 @@ export default function Navbar({
                 <Link key={item.path} href={item.path} data-testid={`link-${item.label.toLowerCase().replace(' ', '-')}`}>
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
-                    className="gap-2"
+                    className="gap-2 rounded-full transition-all duration-300"
                   >
                     <Icon className="w-4 h-4" />
                     {item.label}
@@ -95,7 +97,7 @@ export default function Navbar({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button onClick={onAuthClick} variant="default" data-testid="button-login">
+              <Button onClick={onAuthClick} variant="default" className="rounded-full px-6 shadow-lg hover:shadow-xl transition-all duration-300" data-testid="button-login">
                 Get Started
               </Button>
             )}

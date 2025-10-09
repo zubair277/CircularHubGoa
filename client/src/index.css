@@ -14,55 +14,55 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 100%;
+  --background: 45 100% 97%;
 
-  --foreground: 220 13% 18%;
+  --foreground: 233 21% 21%;
 
-  --border: 215 16% 92%;
+  --border: 351 30% 90%;
 
-  --card: 0 0% 98%;
+  --card: 0 0% 100%;
 
-  --card-foreground: 220 13% 18%;
+  --card-foreground: 233 21% 21%;
 
-  --card-border: 215 16% 94%;
+  --card-border: 351 20% 92%;
 
   --sidebar: 351 73% 97%;
 
-  --sidebar-foreground: 220 13% 18%;
+  --sidebar-foreground: 233 21% 21%;
 
   --sidebar-border: 351 45% 92%;
 
-  --sidebar-primary: 145 35% 45%;
+  --sidebar-primary: 145 35% 56%;
 
   --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 351 55% 90%;
+  --sidebar-accent: 351 60% 92%;
 
-  --sidebar-accent-foreground: 220 13% 18%;
+  --sidebar-accent-foreground: 233 21% 21%;
 
   --sidebar-ring: 145 35% 56%;
 
-  --popover: 0 0% 96%;
+  --popover: 0 0% 100%;
 
-  --popover-foreground: 220 13% 18%;
+  --popover-foreground: 233 21% 21%;
 
-  --popover-border: 215 16% 90%;
+  --popover-border: 351 20% 90%;
 
-  --primary: 145 35% 45%;
+  --primary: 145 35% 56%;
 
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 215 16% 92%;
+  --secondary: 351 73% 95%;
 
-  --secondary-foreground: 220 13% 18%;
+  --secondary-foreground: 233 21% 21%;
 
-  --muted: 215 12% 88%;
+  --muted: 351 20% 94%;
 
-  --muted-foreground: 215 16% 47%;
+  --muted-foreground: 233 21% 45%;
 
-  --accent: 183 38% 88%;
+  --accent: 183 38% 76%;
 
-  --accent-foreground: 220 13% 18%;
+  --accent-foreground: 233 21% 21%;
 
   --destructive: 0 84% 60%;
 
@@ -79,7 +79,7 @@
   --font-sans: Poppins, Open Sans, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
-  --radius: .5rem;
+  --radius: 1rem;
   --shadow-2xs: 0px 1px 2px 0px hsl(220 13% 18% / 0.05);
   --shadow-xs: 0px 1px 3px 0px hsl(220 13% 18% / 0.08);
   --shadow-sm: 0px 2px 4px -1px hsl(220 13% 18% / 0.06), 0px 1px 2px -1px hsl(220 13% 18% / 0.04);
@@ -211,7 +211,20 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(351 73% 98%) 50%, hsl(183 38% 96%) 100%);
+    background-attachment: fixed;
+  }
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
   }
 }
 

@@ -23,7 +23,7 @@ export default function Profile() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
               <CardHeader className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4">
                   <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
@@ -50,7 +50,7 @@ export default function Profile() {
                   <Building2 className="w-4 h-4 text-muted-foreground" />
                   <span>Member since {businessData.joinedDate}</span>
                 </div>
-                <Button variant="outline" className="w-full mt-4" data-testid="button-edit-profile">
+                <Button variant="outline" className="w-full mt-4 rounded-full" data-testid="button-edit-profile">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
@@ -59,7 +59,7 @@ export default function Profile() {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
               <CardHeader>
                 <CardTitle>Your Impact</CardTitle>
                 <CardDescription>Track your contribution to Goa's circular economy</CardDescription>
@@ -76,7 +76,7 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="rounded-2xl shadow-lg">
               <CardHeader>
                 <CardTitle>Business Information</CardTitle>
                 <CardDescription>Manage your business details</CardDescription>
@@ -101,8 +101,8 @@ export default function Profile() {
                   <Input id="location" defaultValue={businessData.location} data-testid="input-location" />
                 </div>
                 <div className="flex gap-4 justify-end mt-6">
-                  <Button variant="outline" data-testid="button-cancel-edit">Cancel</Button>
-                  <Button data-testid="button-save-changes">Save Changes</Button>
+                  <Button variant="outline" className="rounded-full" data-testid="button-cancel-edit">Cancel</Button>
+                  <Button className="rounded-full shadow-lg hover:shadow-xl transition-all duration-300" data-testid="button-save-changes">Save Changes</Button>
                 </div>
               </CardContent>
             </Card>

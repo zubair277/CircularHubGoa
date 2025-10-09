@@ -44,7 +44,7 @@ export default function ListingCard({ listing, onViewDetails, onContact }: Listi
   const categoryColor = categoryColors[listing.category.toLowerCase()] || "bg-muted text-muted-foreground";
 
   return (
-    <Card className="overflow-hidden hover-elevate transition-all" data-testid={`card-listing-${listing.id}`}>
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-2xl" data-testid={`card-listing-${listing.id}`}>
       <div className="relative">
         {listing.imageUrl && (
           <div className="h-48 overflow-hidden">
@@ -118,6 +118,7 @@ export default function ListingCard({ listing, onViewDetails, onContact }: Listi
             variant="outline"
             size="sm"
             onClick={() => onViewDetails?.(listing.id)}
+            className="rounded-full"
             data-testid={`button-view-${listing.id}`}
           >
             View
@@ -127,6 +128,7 @@ export default function ListingCard({ listing, onViewDetails, onContact }: Listi
               variant="default"
               size="sm"
               onClick={() => onContact?.(listing.id)}
+              className="rounded-full shadow-md hover:shadow-lg transition-all duration-300"
               data-testid={`button-contact-${listing.id}`}
             >
               Contact

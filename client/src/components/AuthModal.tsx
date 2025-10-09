@@ -98,7 +98,7 @@ export default function AuthModal({
                   data-testid="input-login-password"
                 />
               </div>
-              <Button type="submit" className="w-full" data-testid="button-login-submit">
+              <Button type="submit" className="w-full rounded-full shadow-md hover:shadow-lg transition-all duration-300" data-testid="button-login-submit">
                 <Mail className="w-4 h-4 mr-2" />
                 Login with Email
               </Button>
@@ -115,7 +115,7 @@ export default function AuthModal({
 
             <Button
               variant="outline"
-              className="w-full gap-2"
+              className="w-full gap-2 rounded-full"
               onClick={onGoogleAuth}
               data-testid="button-google-login"
             >
@@ -173,7 +173,7 @@ export default function AuthModal({
                   data-testid="input-register-business-type"
                 />
               </div>
-              <Button type="submit" className="w-full" data-testid="button-register-submit">
+              <Button type="submit" className="w-full rounded-full shadow-md hover:shadow-lg transition-all duration-300" data-testid="button-register-submit">
                 Create Account
               </Button>
             </form>
@@ -189,7 +189,7 @@ export default function AuthModal({
 
             <Button
               variant="outline"
-              className="w-full gap-2"
+              className="w-full gap-2 rounded-full"
               onClick={onGoogleAuth}
               data-testid="button-google-register"
             >

@@ -76,7 +76,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <Card className="text-center">
+          <Card className="text-center rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
             <CardContent className="pt-6">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingDown className="w-8 h-8 text-primary" />
@@ -88,7 +88,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
             <CardContent className="pt-6">
               <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-accent" />
@@ -100,7 +100,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
             <CardContent className="pt-6">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Leaf className="w-8 h-8 text-primary" />
@@ -116,7 +116,7 @@ export default function Home() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold">Featured Listings</h2>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 rounded-full">
               View All
               <ArrowRight className="w-4 h-4" />
             </Button>
