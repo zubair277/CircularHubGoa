@@ -1,10 +1,11 @@
 import { useState } from "react";
 import ListingCard from "@/components/ListingCard";
 import MapView from "@/components/MapView";
+import CreateAlertModal from "@/components/CreateAlertModal";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, MapIcon, List } from "lucide-react";
+import { Search, Filter, MapIcon, List, Bell } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -21,6 +22,7 @@ export default function Marketplace() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showChatFor, setShowChatFor] = useState<string | null>(null);
   const [showScheduleFor, setShowScheduleFor] = useState<string | null>(null);
+  const [showCreateAlert, setShowCreateAlert] = useState(false);
 
   const mockListings = [
     {
@@ -99,6 +101,21 @@ export default function Marketplace() {
     distance: listing.distance,
   }));
 
+  // Filter listings based on search query and category
+  const filteredListings = mockListings.filter((listing) => {
+    const matchesSearch = !searchQuery || 
+      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      listing.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      listing.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = categoryFilter === "all" || 
+      listing.category.toLowerCase() === categoryFilter.toLowerCase();
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const hasResults = filteredListings.length > 0;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -154,16 +171,41 @@ export default function Marketplace() {
         </div>
 
         {viewMode === "list" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockListings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                onViewDetails={(id) => setSelectedId(id)}
-                onContact={(id) => setShowChatFor(id)}
-              />
-            ))}
-          </div>
+          <>
+            {hasResults ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredListings.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    onViewDetails={(id) => setSelectedId(id)}
+                    onContact={(id) => setShowChatFor(id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="max-w-md mx-auto">
+                  <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No results found</h3>
+                  <p className="text-muted-foreground mb-6">
+                    {searchQuery ? (
+                      <>No luck? Create an alert for '<span className="font-medium">{searchQuery}</span>' and we'll notify you when it's available near you.</>
+                    ) : (
+                      "No listings match your current filters. Try adjusting your search or create an alert."
+                    )}
+                  </p>
+                  <Button 
+                    onClick={() => setShowCreateAlert(true)}
+                    className="rounded-full"
+                  >
+                    <Bell className="w-4 h-4 mr-2" />
+                    Create Alert
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {viewMode === "map" && (
@@ -201,15 +243,17 @@ export default function Marketplace() {
           onClose={() => setShowScheduleFor(null)}
         />
       )}
+
+      {/* Create Alert Modal */}
+      <CreateAlertModal
+        isOpen={showCreateAlert}
+        onClose={() => setShowCreateAlert(false)}
+        initialKeywords={searchQuery}
+        userLocation={{ latitude: 15.4909, longitude: 73.8278 }} // Demo location
+      />
     </div>
   );
 }
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Input } from "@/components/ui/input";
 
 function DetailsModal({ listing, onClose, onContact, onSchedule }: { listing: any; onClose: () => void; onContact: () => void; onSchedule: () => void }) {
   return (

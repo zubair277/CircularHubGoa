@@ -55,9 +55,11 @@ export const claims = pgTable("claims", {
 export const alerts = pgTable("alerts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  categories: jsonb("categories").notNull(), // array of category strings
-  distanceRadius: integer("distance_radius").notNull(), // in km
-  notificationType: text("notification_type").notNull(), // email, in-app, both
+  keywords: text("keywords").notNull(),
+  categoryId: varchar("category_id"), // nullable, references a category
+  radiusKm: integer("radius_km").notNull(),
+  userLatitude: decimal("user_latitude", { precision: 10, scale: 7 }),
+  userLongitude: decimal("user_longitude", { precision: 10, scale: 7 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -242,6 +244,7 @@ export type Claim = typeof claims.$inferSelect;
 export const insertAlertSchema = createInsertSchema(alerts).omit({ 
   id: true, 
   createdAt: true,
+  isActive: true,
 });
 export const updateAlertSchema = insertAlertSchema.partial();
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
