@@ -1,0 +1,164 @@
+# ♻️ Prompt: Add Advanced Features to CircularGoa React Web App
+
+You’ve already built the base version of the **CircularGoa** React app — a B2B marketplace for waste and surplus exchange among small tourism businesses in Goa.
+
+Now, upgrade it with the following **feature modules** while keeping the UI consistent with the tropical eco-sustainability theme.
+
+---
+
+## 🌍 1. Resource Listing & Claiming System
+
+### Goal:
+Let users (businesses) post waste/surplus listings and allow others to claim them.
+
+### Requirements:
+- Add a **"Create Listing"** form with fields:
+  - Resource Name
+  - Description
+  - Quantity (kg, liters, units)
+  - Location (auto or manual entry)
+  - Availability (one-time / recurring)
+  - Category (Organic, Glass, Plastic, Metal, Textile, etc.)
+- Show all listings on a **Marketplace Page** (grid view + map view).
+- Each listing card shows:
+  - Thumbnail or icon
+  - Resource name & quantity
+  - Business name
+  - Distance (calculated via user’s location)
+  - “Claim” button
+- When another business clicks “Claim,” open a **modal** to confirm the claim and message the owner.
+- Save claims to Firestore under `claims` collection.
+
+---
+
+## 🧠 2. Smart Alerts by Category
+
+### Goal:
+Users get notified when new listings appear in their chosen categories or within a distance range.
+
+### Implementation:
+- Add a **"My Alerts"** page where users can:
+  - Select categories (checkboxes)
+  - Set a distance radius (e.g., 2–10 km)
+  - Choose notification type (email, in-app)
+- Use Firebase Cloud Messaging or simple app-level alerts for notifications.
+- Display real-time alerts via toasts or a notification bell icon.
+- Example:
+  - “🪴 New compostable waste available 3 km from you.”
+
+---
+
+## 🔁 3. Circular Trade Marketplace
+
+### Components:
+- **Waste Exchange Listings** (giveaway/sell/exchange)
+- **Demand Listings** (request materials)
+- Add toggle switch → `Show Offers` / `Show Requests`
+- Add **smart matching system**:
+  - Suggest trades when listing categories overlap within 5 km.
+  - Example message: “Your vegetable scraps match a compost unit nearby (2 km).”
+- Add map markers for each listing using **React Leaflet** with category icons.
+
+---
+
+## 💬 4. Communication & Coordination
+
+### Add:
+- **In-App Chat System** (Firebase Realtime DB or Firestore)
+  - One-to-one messaging between businesses.
+  - Show user avatars, timestamps, message bubbles.
+  - Add translation API integration (Google Translate or open-source alternative) for English ↔ Konkani ↔ Hindi.
+- **Rating & Feedback:**
+  - After a trade, allow users to rate the experience (1–5 stars) and add a short review.
+  - Store feedback under `ratings` collection.
+
+---
+
+## 🚚 5. Pickup Scheduling & Logistics Integration
+
+### Add:
+- **Schedule Pickup** button when a listing is claimed.
+- Calendar modal for selecting pickup date/time.
+- Integration-ready section for local logistics API (dummy data for now).
+- Send in-app reminders before scheduled pickup.
+- Add “Mark as Completed” button to close trades.
+
+### Add Tracking:
+- Waste weight (in kg)
+- Value earned/saved (₹)
+- Update these metrics in user dashboard.
+
+---
+
+## 📊 6. Sustainability Impact Dashboard
+
+### Add Two Levels:
+1. **Individual Business Dashboard**
+   - Waste diverted (in kg)
+   - CO₂ saved (calculated using simple multipliers)
+   - Money earned/saved
+2. **Community Dashboard**
+   - Total waste diverted in Goa
+   - Total CO₂ saved
+   - Top 10 “Green Champions”
+
+### Bonus:
+- Add badges (e.g., 🌱 *Green Champion*, ♻️ *Top Recycler*)
+- Add animated counters using Framer Motion.
+- Use Recharts for bar/line graphs.
+
+---
+
+## 📚 7. Knowledge & Collaboration Hub
+
+### Add a new route: `/hub`
+Include:
+- **Best Practices**: Static articles/videos (stored in `/data/resources.json`)
+- **Workshops & Events** section (with image, date, location)
+- **Community Forum**:
+  - Simple post & reply system (stored in Firestore)
+  - Topics: composting, upcycling, local success stories
+
+---
+
+## 🔔 8. Notifications & Alerts Center
+
+### Add:
+- Bell icon in navbar showing count of unread alerts.
+- Real-time notifications for:
+  - New listings that match interests
+  - New chat messages
+  - Pickup reminders
+- Toast notifications using `react-hot-toast`:
+  - “✅ New listing matches your alert: 50kg Vegetable Peels nearby.”
+
+---
+
+## ⚙️ Technical Notes
+
+- Keep backend in **Firebase (Firestore + Auth)** or **Supabase**.
+- Use **React Router v6** for navigation.
+- Use **Tailwind CSS + Shadcn/UI** for consistent design.
+- Use **Framer Motion** for animations.
+- Use **React-Leaflet** for maps and distance-based markers.
+
+---
+
+## 🌈 Design Consistency
+- Keep tropical eco-theme: coral, green, aqua, beige palette.
+- Use icons for clarity (Lucide or Heroicons).
+- Maintain rounded cards, smooth hover effects, and responsive design.
+- Keep mobile-first layout.
+
+---
+
+## ✅ Deliverables
+
+By the end:
+- All new pages and components added.
+- Fully functional marketplace, dashboard, alerts, and chat.
+- Clean, modern, responsive UI.
+- Reuses existing app structure — no breaking changes.
+- Works on both desktop and mobile.
+
+**Keep all existing functionality. Only extend the app with these new features and pages while maintaining consistent design and code quality.**
