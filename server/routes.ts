@@ -31,15 +31,17 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Local alias enables TypeScript narrowing of possibly-undefined imported `db`
+  const database = db;
   // ========== Auth Routes ==========
   app.post("/api/auth/register", async (req, res) => {
     try {
       const data = insertUserSchema.parse(req.body);
 
       // If DATABASE_URL is configured, persist to Supabase via Drizzle
-      if (db) {
+      if (database) {
         // Ensure email uniqueness at DB level; check first to give friendly error
-        const existing = await db
+        const existing = await database
           .select()
           .from(usersTable)
           .where(eq(usersTable.email, data.email));
@@ -47,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(409).json({ error: "Email already registered" });
         }
 
-        const [created] = await db
+        const [created] = await database
           .insert(usersTable)
           .values(data)
           .returning();
@@ -73,8 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertListingSchema.parse(req.body);
 
-      if (db) {
-        const [created] = await db
+      if (database) {
+        const [created] = await database
           .insert(listingsTable)
           .values({ ...validatedData, status: "available" })
           .returning();
@@ -92,15 +94,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/listings", async (req, res) => {
     try {
       const { type } = req.query;
-      if (db) {
+      if (database) {
         if (type === "offer" || type === "request") {
-          const rows = await db
+          const rows = await database
             .select()
             .from(listingsTable)
             .where(eq(listingsTable.listingType, String(type)));
           return res.json(rows);
         }
-        const rows = await db.select().from(listingsTable);
+        const rows = await database.select().from(listingsTable);
         return res.json(rows);
       }
 
@@ -119,8 +121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get listings by user
   app.get("/api/listings/user/:userId", async (req, res) => {
     try {
-      if (db) {
-        const rows = await db
+      if (database) {
+        const rows = await database
           .select()
           .from(listingsTable)
           .where(eq(listingsTable.userId, req.params.userId));
@@ -136,8 +138,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single listing
   app.get("/api/listings/:id", async (req, res) => {
     try {
-      if (db) {
-        const rows = await db
+      if (database) {
+        const rows = await database
           .select()
           .from(listingsTable)
           .where(eq(listingsTable.id, req.params.id));
@@ -155,8 +157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update listing
   app.patch("/api/listings/:id", async (req, res) => {
     try {
-      if (process.env.DATABASE_URL) {
-        const [updated] = await db
+      if (database) {
+        const [updated] = await database
           .update(listingsTable)
           .set({ ...req.body, updatedAt: new Date() })
           .where(eq(listingsTable.id, req.params.id))
@@ -175,8 +177,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete listing
   app.delete("/api/listings/:id", async (req, res) => {
     try {
-      if (process.env.DATABASE_URL) {
-        const result = await db
+      if (database) {
+        const result = await database
           .delete(listingsTable)
           .where(eq(listingsTable.id, req.params.id))
           .returning();
@@ -685,8 +687,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/communities", async (req, res) => {
     try {
       const data = insertCommunitySchema.parse(req.body);
-      if (db) {
-        const [row] = await db.insert(communitiesTable).values(data).returning();
+      if (database) {
+        const [row] = await database.insert(communitiesTable).values(data).returning();
         return res.json(row);
       }
       const created = await storage.createCommunity(data as any);
@@ -699,8 +701,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // List communities
   app.get("/api/communities", async (_req, res) => {
     try {
-      if (db) {
-        const rows = await db.select().from(communitiesTable);
+      if (database) {
+        const rows = await database.select().from(communitiesTable);
         return res.json(rows);
       }
       const rows = await storage.getCommunities();
@@ -714,8 +716,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/communities/:id/join", async (req, res) => {
     try {
       const data = insertCommunityMembershipSchema.parse({ communityId: req.params.id, userId: req.body.userId });
-      if (db) {
-        const [row] = await db.insert(communityMembershipsTable).values(data).returning();
+      if (database) {
+        const [row] = await database.insert(communityMembershipsTable).values(data).returning();
         return res.json(row);
       }
       const row = await storage.joinCommunity(data as any);
@@ -729,8 +731,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/communities/:id/posts", async (req, res) => {
     try {
       const data = insertCommunityPostSchema.parse({ ...req.body, communityId: req.params.id });
-      if (db) {
-        const [row] = await db.insert(communityPostsTable).values(data).returning();
+      if (database) {
+        const [row] = await database.insert(communityPostsTable).values(data).returning();
         return res.json(row);
       }
       const row = await storage.createCommunityPost(data as any);
@@ -744,8 +746,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/communities/:id/posts", async (req, res) => {
     try {
       const type = typeof req.query.type === 'string' ? req.query.type : undefined;
-      if (db) {
-        const rows = await db.select().from(communityPostsTable).where(eq(communityPostsTable.communityId, req.params.id));
+      if (database) {
+        const rows = await database.select().from(communityPostsTable).where(eq(communityPostsTable.communityId, req.params.id));
         return res.json(type ? rows.filter(r => (r as any).type === type) : rows);
       }
       const rows = await storage.getCommunityPosts(req.params.id);
@@ -759,8 +761,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/community/posts/:postId/comments", async (req, res) => {
     try {
       const data = insertCommunityCommentSchema.parse({ ...req.body, postId: req.params.postId });
-      if (db) {
-        const [row] = await db.insert(communityCommentsTable).values(data).returning();
+      if (database) {
+        const [row] = await database.insert(communityCommentsTable).values(data).returning();
         return res.json(row);
       }
       const row = await storage.createCommunityComment(data as any);
