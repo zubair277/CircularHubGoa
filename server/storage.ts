@@ -26,6 +26,22 @@ import {
   type InsertUserBadge,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import {
+  users as usersTable,
+  listings as listingsTable,
+  claims as claimsTable,
+  alerts as alertsTable,
+  messages as messagesTable,
+  ratings as ratingsTable,
+  pickups as pickupsTable,
+  events as eventsTable,
+  forumPosts as forumPostsTable,
+  forumReplies as forumRepliesTable,
+  notifications as notificationsTable,
+  userBadges as userBadgesTable,
+} from "@shared/schema";
+import { and, eq } from "drizzle-orm";
 
 export interface IStorage {
   // Users

@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { users as usersTable, listings as listingsTable, insertUserSchema } from "@shared/schema";
+import { and, eq } from "drizzle-orm";
 import { findMatchingAlerts } from "./utils";
 import { 
   insertListingSchema,
@@ -18,28 +21,57 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ========== Auth Routes ==========
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+
+      // If DATABASE_URL is configured, persist to Supabase via Drizzle
+      if (db) {
+        // Ensure email uniqueness at DB level; check first to give friendly error
+        const existing = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.email, data.email));
+        if (existing.length > 0) {
+          return res.status(409).json({ error: "Email already registered" });
+        }
+
+        const [created] = await db
+          .insert(usersTable)
+          .values(data)
+          .returning();
+
+        // Never return password
+        const { password: _omit, ...safe } = created as any;
+        return res.json(safe);
+      }
+
+      // Fallback to in-memory storage when DB not configured
+      const created = await storage.createUser(data);
+      const { password: _omit, ...safe } = created as any;
+      res.json(safe);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
   
   // ========== Listings Routes ==========
   
-  // Create a new listing
+  // Create a new listing (writes to Supabase when DATABASE_URL is set)
   app.post("/api/listings", async (req, res) => {
     try {
       const validatedData = insertListingSchema.parse(req.body);
-      const listing = await storage.createListing(validatedData);
-      
-      // Find and notify users with matching alerts
-      const matchingAlerts = await findMatchingAlerts(listing);
-      
-      for (const alert of matchingAlerts) {
-        await storage.createNotification({
-          userId: alert.userId,
-          type: "listing_match",
-          title: "New Listing Matches Your Alert",
-          message: `New ${listing.category} listing: ${listing.title} - ${listing.quantity}${listing.unit}`,
-          relatedId: listing.id,
-        });
+
+      if (db) {
+        const [created] = await db
+          .insert(listingsTable)
+          .values({ ...validatedData, status: "available" })
+          .returning();
+        return res.json(created);
       }
-      
+
+      const listing = await storage.createListing(validatedData);
       res.json(listing);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -50,14 +82,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/listings", async (req, res) => {
     try {
       const { type } = req.query;
+      if (db) {
+        if (type === "offer" || type === "request") {
+          const rows = await db
+            .select()
+            .from(listingsTable)
+            .where(eq(listingsTable.listingType, String(type)));
+          return res.json(rows);
+        }
+        const rows = await db.select().from(listingsTable);
+        return res.json(rows);
+      }
+
       let listings;
-      
       if (type === "offer" || type === "request") {
         listings = await storage.getListingsByType(type);
       } else {
         listings = await storage.getAllListings();
       }
-      
       res.json(listings);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -67,6 +109,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get listings by user
   app.get("/api/listings/user/:userId", async (req, res) => {
     try {
+      if (db) {
+        const rows = await db
+          .select()
+          .from(listingsTable)
+          .where(eq(listingsTable.userId, req.params.userId));
+        return res.json(rows);
+      }
       const listings = await storage.getListingsByUser(req.params.userId);
       res.json(listings);
     } catch (error: any) {
@@ -77,10 +126,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single listing
   app.get("/api/listings/:id", async (req, res) => {
     try {
-      const listing = await storage.getListing(req.params.id);
-      if (!listing) {
-        return res.status(404).json({ error: "Listing not found" });
+      if (db) {
+        const rows = await db
+          .select()
+          .from(listingsTable)
+          .where(eq(listingsTable.id, req.params.id));
+        if (rows.length === 0) return res.status(404).json({ error: "Listing not found" });
+        return res.json(rows[0]);
       }
+      const listing = await storage.getListing(req.params.id);
+      if (!listing) return res.status(404).json({ error: "Listing not found" });
       res.json(listing);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -90,10 +145,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update listing
   app.patch("/api/listings/:id", async (req, res) => {
     try {
-      const listing = await storage.updateListing(req.params.id, req.body);
-      if (!listing) {
-        return res.status(404).json({ error: "Listing not found" });
+      if (process.env.DATABASE_URL) {
+        const [updated] = await db
+          .update(listingsTable)
+          .set({ ...req.body, updatedAt: new Date() })
+          .where(eq(listingsTable.id, req.params.id))
+          .returning();
+        if (!updated) return res.status(404).json({ error: "Listing not found" });
+        return res.json(updated);
       }
+      const listing = await storage.updateListing(req.params.id, req.body);
+      if (!listing) return res.status(404).json({ error: "Listing not found" });
       res.json(listing);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -103,10 +165,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete listing
   app.delete("/api/listings/:id", async (req, res) => {
     try {
-      const deleted = await storage.deleteListing(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Listing not found" });
+      if (process.env.DATABASE_URL) {
+        const result = await db
+          .delete(listingsTable)
+          .where(eq(listingsTable.id, req.params.id))
+          .returning();
+        if (result.length === 0) return res.status(404).json({ error: "Listing not found" });
+        return res.json({ success: true });
       }
+      const deleted = await storage.deleteListing(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Listing not found" });
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -175,8 +243,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (status === "completed") {
           // Mark listing as completed when claim is completed
           const updatedListing = { ...listing, status: "completed" };
-          // Note: We can't update status through updateListing since it's not in InsertListing
-          // This would need a separate updateListingStatus method or include status in updates
         }
       }
       

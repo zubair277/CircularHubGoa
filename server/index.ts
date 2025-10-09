@@ -37,6 +37,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Load env vars locally when not provided by hosting
+  try {
+    await import("dotenv/config");
+  } catch {}
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -47,25 +51,42 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  const basePort = parseInt(process.env.PORT || '5000', 10);
+  const listenOn = (candidatePort: number, remainingRetries: number) => {
+    const listenOptions: any = {
+      port: candidatePort,
+      host: "0.0.0.0",
+    };
+    if (process.platform !== "win32") {
+      listenOptions.reusePort = true;
+    }
+
+    const onError = (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE' && remainingRetries > 0) {
+        const nextPort = candidatePort + 1;
+        log(`port ${candidatePort} in use, retrying on ${nextPort}…`);
+        server.off('error', onError);
+        // Try the next port
+        listenOn(nextPort, remainingRetries - 1);
+      } else {
+        throw err;
+      }
+    };
+
+    server.once('error', onError);
+    server.listen(listenOptions, () => {
+      server.off('error', onError);
+      log(`serving on port ${candidatePort}`);
+    });
+  };
+
+  
+  listenOn(basePort, 10);
 })();

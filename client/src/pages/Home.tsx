@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import HeroSection from "@/components/HeroSection";
 import ListingCard from "@/components/ListingCard";
 import AuthModal from "@/components/AuthModal";
@@ -116,10 +117,12 @@ export default function Home() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold">Featured Listings</h2>
-            <Button variant="outline" className="gap-2 rounded-full">
-              View All
-              <ArrowRight className="w-4 h-4" />
-            </Button>
+            <Link href="/marketplace">
+              <Button variant="outline" className="gap-2 rounded-full">
+                View All
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredListings.map((listing) => (

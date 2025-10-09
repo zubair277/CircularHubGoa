@@ -17,6 +17,8 @@ export default function Marketplace() {
   const [viewMode, setViewMode] = useState<"list" | "map" | "split">("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showChatFor, setShowChatFor] = useState<string | null>(null);
 
   const mockListings = [
     {
@@ -155,8 +157,8 @@ export default function Marketplace() {
               <ListingCard
                 key={listing.id}
                 listing={listing}
-                onViewDetails={(id) => console.log('View:', id)}
-                onContact={(id) => console.log('Contact:', id)}
+                onViewDetails={(id) => setSelectedId(id)}
+                onContact={(id) => setShowChatFor(id)}
               />
             ))}
           </div>
@@ -167,11 +169,108 @@ export default function Marketplace() {
             <MapView
               listings={mapListings}
               center={[15.4909, 73.8278]}
-              onListingClick={(id) => console.log('Map click:', id)}
+              onListingClick={(id) => setSelectedId(id)}
             />
           </div>
         )}
       </div>
+
+      {/* Details Modal */}
+      {selectedId && (
+        <DetailsModal
+          listing={mockListings.find(l => l.id === selectedId)!}
+          onClose={() => setSelectedId(null)}
+          onContact={() => setShowChatFor(selectedId)}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {showChatFor && (
+        <ChatModal
+          listing={mockListings.find(l => l.id === showChatFor)!}
+          onClose={() => setShowChatFor(null)}
+        />
+      )}
     </div>
+  );
+}
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+
+function DetailsModal({ listing, onClose, onContact }: { listing: any; onClose: () => void; onContact: () => void }) {
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{listing.title}</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            {listing.imageUrl && (
+              <img src={listing.imageUrl} alt={listing.title} className="w-full h-64 object-cover rounded-lg" />
+            )}
+            <p className="text-sm text-muted-foreground">{listing.description}</p>
+            <div className="flex gap-2 items-center">
+              <Badge variant="outline">{listing.status === 'available' ? 'Available' : listing.status}</Badge>
+              <span className="text-sm">{listing.quantity} {listing.unit} available</span>
+            </div>
+            <Button onClick={onContact} className="rounded-full">Contact Seller</Button>
+          </div>
+          <div className="h-72">
+            <MapView
+              listings={[{
+                id: listing.id,
+                title: listing.title,
+                category: listing.category,
+                latitude: listing.latitude,
+                longitude: listing.longitude,
+                businessName: listing.businessName,
+                distance: listing.distance,
+              }]}
+              center={[listing.latitude, listing.longitude]}
+              zoom={14}
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ChatModal({ listing, onClose }: { listing: any; onClose: () => void }) {
+  const [messages, setMessages] = useState<{ from: 'me' | 'seller'; text: string }[]>([
+    { from: 'seller', text: `Hi! ${listing.title} is available.` }
+  ]);
+  const [text, setText] = useState("");
+
+  const send = () => {
+    if (!text.trim()) return;
+    setMessages((m) => [...m, { from: 'me', text }]);
+    setText("");
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Message {listing.businessName}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col h-80 border rounded-lg">
+          <div className="flex-1 overflow-auto p-3 space-y-2">
+            {messages.map((m, i) => (
+              <div key={i} className={`max-w-[80%] px-3 py-2 rounded-xl ${m.from === 'me' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-muted'}`}>
+                {m.text}
+              </div>
+            ))}
+          </div>
+          <div className="p-2 border-t flex gap-2">
+            <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." className="h-10 resize-none" />
+            <Button onClick={send} className="shrink-0 rounded-full">Send</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

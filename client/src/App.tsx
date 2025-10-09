@@ -13,6 +13,7 @@ import AddListing from "@/pages/AddListing";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
+import AuthModal from "@/components/AuthModal";
 
 function Router() {
   return (
@@ -28,7 +29,27 @@ function Router() {
 }
 
 function App() {
-  const [isAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const handleLogout = () => {
+    // Clear any stored session if added later
+    setIsAuthenticated(false);
+    setUserName(undefined);
+  };
+
+  const handleLogin = (email: string, _password: string) => {
+    setIsAuthenticated(true);
+    setUserName(email);
+    setAuthModalOpen(false);
+  };
+
+  const handleRegister = (data: { name: string; email: string }) => {
+    setIsAuthenticated(true);
+    setUserName(data.name || data.email);
+    setAuthModalOpen(false);
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -40,14 +61,21 @@ function App() {
             </div>
             <Navbar
               isAuthenticated={isAuthenticated}
-              userName="Green Resort Goa"
-              onAuthClick={() => console.log('Auth clicked')}
-              onLogout={() => console.log('Logout')}
+              userName={userName || "Business User"}
+              onAuthClick={() => setAuthModalOpen(true)}
+              onLogout={handleLogout}
             />
             <main className="flex-1">
               <Router />
             </main>
           </div>
+          <AuthModal
+            open={authModalOpen}
+            onOpenChange={setAuthModalOpen}
+            onLogin={handleLogin}
+            onRegister={(d) => handleRegister({ name: d.name, email: d.email })}
+            onGoogleAuth={() => setIsAuthenticated(true)}
+          />
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>
