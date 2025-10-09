@@ -150,6 +150,18 @@ export const userBadges = pgTable("user_badges", {
   earnedAt: timestamp("earned_at").defaultNow(),
 });
 
+// Delivery Requests
+export const deliveryRequests = pgTable("delivery_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId: varchar("listing_id").notNull().references(() => listings.id),
+  partnerId: varchar("partner_id").notNull(),
+  pickupAddress: text("pickup_address").notNull(),
+  deliveryAddress: text("delivery_address").notNull(),
+  itemDetails: text("item_details"),
+  status: text("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Communities
 export const communities = pgTable("communities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -304,6 +316,11 @@ export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
 });
 export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
 export type UserBadge = typeof userBadges.$inferSelect;
+
+// Delivery Requests
+export const insertDeliveryRequestSchema = createInsertSchema(deliveryRequests).omit({ id: true, createdAt: true, status: true });
+export type InsertDeliveryRequest = z.infer<typeof insertDeliveryRequestSchema>;
+export type DeliveryRequest = typeof deliveryRequests.$inferSelect;
 
 // Communities
 export const insertCommunitySchema = createInsertSchema(communities).omit({ id: true });

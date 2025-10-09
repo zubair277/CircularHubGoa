@@ -18,6 +18,7 @@ import {
   insertForumReplySchema,
   insertNotificationSchema,
   insertUserBadgeSchema,
+  insertDeliveryRequestSchema,
   // community
   insertCommunitySchema,
   insertCommunityMembershipSchema,
@@ -676,6 +677,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(badges);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== Delivery Requests ==========
+  app.post("/api/delivery-requests", async (req, res) => {
+    try {
+      const data = insertDeliveryRequestSchema.parse(req.body);
+      const row = await storage.createDeliveryRequest(data as any);
+      res.json(row);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/delivery-requests/listing/:listingId", async (req, res) => {
+    try {
+      const rows = await storage.getDeliveryRequestsByListing(req.params.listingId);
+      res.json(rows);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
   });
 

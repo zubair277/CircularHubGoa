@@ -15,6 +15,7 @@ import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
 import AuthModal from "@/components/AuthModal";
+import Logistics from "@/pages/Logistics";
 
 function Router() {
   return (
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/marketplace" component={Marketplace} />
       <Route path="/community" component={Community} />
+      <Route path="/logistics" component={Logistics} />
       <Route path="/add-listing" component={AddListing} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />

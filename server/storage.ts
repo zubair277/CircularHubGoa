@@ -24,6 +24,8 @@ import {
   type InsertNotification,
   type UserBadge,
   type InsertUserBadge,
+  type DeliveryRequest,
+  type InsertDeliveryRequest,
   // community
   type Community,
   type InsertCommunity,
@@ -146,6 +148,10 @@ export interface IStorage {
   // Community messages
   createCommunityMessage(m: InsertCommunityMessage): Promise<CommunityMessage>;
   getCommunityMessages(communityId: string): Promise<CommunityMessage[]>;
+
+  // Delivery Requests
+  createDeliveryRequest(r: InsertDeliveryRequest): Promise<DeliveryRequest>;
+  getDeliveryRequestsByListing(listingId: string): Promise<DeliveryRequest[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -166,6 +172,7 @@ export class MemStorage implements IStorage {
   private communityPosts: Map<string, CommunityPost>;
   private communityComments: Map<string, CommunityComment>;
   private communityMessages: Map<string, CommunityMessage>;
+  private deliveryRequests: Map<string, DeliveryRequest>;
 
   constructor() {
     this.users = new Map();
@@ -185,6 +192,7 @@ export class MemStorage implements IStorage {
     this.communityPosts = new Map();
     this.communityComments = new Map();
     this.communityMessages = new Map();
+    this.deliveryRequests = new Map();
   }
 
   // Users
@@ -601,6 +609,18 @@ export class MemStorage implements IStorage {
     return Array.from(this.userBadges.values()).filter(
       (badge) => badge.userId === userId,
     );
+  }
+
+  // Delivery Requests
+  async createDeliveryRequest(r: InsertDeliveryRequest): Promise<DeliveryRequest> {
+    const id = randomUUID();
+    const row: DeliveryRequest = { ...r, id, status: "pending", createdAt: new Date() } as any;
+    this.deliveryRequests.set(id, row);
+    return row;
+  }
+
+  async getDeliveryRequestsByListing(listingId: string): Promise<DeliveryRequest[]> {
+    return Array.from(this.deliveryRequests.values()).filter(d => d.listingId === listingId);
   }
 
   // Community

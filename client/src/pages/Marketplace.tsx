@@ -209,6 +209,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 
 function DetailsModal({ listing, onClose, onContact, onSchedule }: { listing: any; onClose: () => void; onContact: () => void; onSchedule: () => void }) {
   return (
@@ -230,6 +231,7 @@ function DetailsModal({ listing, onClose, onContact, onSchedule }: { listing: an
             <div className="flex gap-2">
               <Button onClick={onContact} className="rounded-full">Contact Seller</Button>
               <Button variant="outline" onClick={onSchedule} className="rounded-full">Schedule Pickup</Button>
+              <GetQuoteButton listing={listing} />
             </div>
           </div>
           <div className="h-72">
@@ -282,6 +284,58 @@ function ChatModal({ listing, onClose }: { listing: any; onClose: () => void }) 
           <div className="p-2 border-t flex gap-2">
             <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." className="h-10 resize-none" />
             <Button onClick={send} className="shrink-0 rounded-full">Send</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function GetQuoteButton({ listing }: { listing: any }) {
+  const [open, setOpen] = useState(false);
+  const [pickup, setPickup] = useState(listing?.businessName || "");
+  const [delivery, setDelivery] = useState("");
+  const [item, setItem] = useState(`${listing?.quantity} ${listing?.unit} ${listing?.title}`);
+  const submit = async () => {
+    if (!delivery.trim()) return;
+    await fetch('/api/delivery-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        listingId: listing.id,
+        partnerId: 'local-partner',
+        pickupAddress: pickup,
+        deliveryAddress: delivery,
+        itemDetails: item,
+      })
+    });
+    const text = encodeURIComponent(`New Delivery Request from CircularGoa:%0AItem: ${item}%0AFrom: ${pickup}%0ATo: ${delivery}%0APlease reply with a quote.`);
+    window.open(`https://wa.me/919876543210?text=${text}`, '_blank');
+    setOpen(false);
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button variant="secondary" onClick={() => setOpen(true)} className="rounded-full">Get Delivery Quote</Button>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Get Delivery Quote</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="text-sm text-muted-foreground">Pickup Address</label>
+            <Input value={pickup} onChange={(e) => setPickup(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground">Delivery Address</label>
+            <Input value={delivery} onChange={(e) => setDelivery(e.target.value)} placeholder="Enter destination" />
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground">Item Details</label>
+            <Input value={item} onChange={(e) => setItem(e.target.value)} />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setOpen(false)} className="rounded-full">Cancel</Button>
+            <Button onClick={submit} className="rounded-full">Submit</Button>
           </div>
         </div>
       </DialogContent>
