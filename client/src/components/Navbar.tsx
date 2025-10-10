@@ -10,6 +10,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useEffect } from "react";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -36,6 +37,17 @@ export default function Navbar({
   const [location] = useLocation();
   const { toast } = useToast();
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+
+  // Listen for notification updates
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      // The useNotifications hook will automatically update from localStorage
+      console.log('Notification update event received');
+    };
+
+    window.addEventListener('notificationUpdated', handleNotificationUpdate);
+    return () => window.removeEventListener('notificationUpdated', handleNotificationUpdate);
+  }, []);
 
   // Debug logging
   console.log('Navbar: notifications count:', notifications.length);

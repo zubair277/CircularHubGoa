@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 export interface Notification {
   id: string;
-  type: 'listing_created' | 'listing_matched' | 'message_received' | 'alert_triggered';
+  type: 'listing_created' | 'listing_matched' | 'message_received' | 'alert_triggered' | 'pickup_scheduled';
   title: string;
   message: string;
   timestamp: string;
@@ -36,6 +36,24 @@ export function useNotifications() {
       console.error('Failed to save notifications:', error);
     }
   }, [notifications]);
+
+  // Listen for notification update events
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setNotifications(parsed);
+        }
+      } catch (error) {
+        console.error('Failed to refresh notifications:', error);
+      }
+    };
+
+    window.addEventListener('notificationUpdated', handleNotificationUpdate);
+    return () => window.removeEventListener('notificationUpdated', handleNotificationUpdate);
+  }, []);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: Notification = {
