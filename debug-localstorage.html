@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug localStorage</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        pre { background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug localStorage Data</h1>
+    
+    <div class="debug">
+        <h2>User Data:</h2>
+        <pre id="userData"></pre>
+    </div>
+    
+    <div class="debug">
+        <h2>Listings Data:</h2>
+        <pre id="listingsData"></pre>
+    </div>
+    
+    <div class="debug">
+        <h2>All localStorage:</h2>
+        <pre id="allData"></pre>
+    </div>
+    
+    <button onclick="refreshData()">Refresh Data</button>
+    <button onclick="clearData()">Clear All Data</button>
+    
+    <script>
+        function refreshData() {
+            const user = localStorage.getItem('user');
+            const listings = localStorage.getItem('listings');
+            const allData = {};
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                allData[key] = localStorage.getItem(key);
+            }
+            
+            document.getElementById('userData').textContent = user ? JSON.stringify(JSON.parse(user), null, 2) : 'No user data';
+            document.getElementById('listingsData').textContent = listings ? JSON.stringify(JSON.parse(listings), null, 2) : 'No listings data';
+            document.getElementById('allData').textContent = JSON.stringify(allData, null, 2);
+        }
+        
+        function clearData() {
+            localStorage.clear();
+            refreshData();
+        }
+        
+        // Load data on page load
+        refreshData();
+    </script>
+</body>
+</html>

@@ -233,6 +233,7 @@ export class MemStorage implements IStorage {
       longitude: insertUser.longitude ?? null,
       phone: insertUser.phone ?? null,
       avatar: insertUser.avatar ?? null,
+      verified: insertUser.verified ?? false,
       id,
       createdAt: new Date(),
     };
@@ -343,6 +344,9 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const alert: Alert = {
       ...insertAlert,
+      categoryId: insertAlert.categoryId ?? null,
+      userLatitude: insertAlert.userLatitude ?? null,
+      userLongitude: insertAlert.userLongitude ?? null,
       id,
       isActive: true,
       createdAt: new Date(),
@@ -409,6 +413,9 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const message: Message = {
       ...insertMessage,
+      content: insertMessage.content ?? null,
+      type: insertMessage.type ?? null,
+      offerAmount: insertMessage.offerAmount ?? null,
       relatedClaimId: insertMessage.relatedClaimId ?? null,
       id,
       isRead: false,
@@ -427,19 +434,30 @@ export class MemStorage implements IStorage {
   }
 
   async getMessagesBetweenUsers(user1Id: string, user2Id: string): Promise<Message[]> {
+    // Find conversations that include both users
+    const relevantConversations = Array.from(this.conversations.values())
+      .filter(conv => {
+        const participants = conv.participants as string[];
+        return participants.includes(user1Id) && participants.includes(user2Id);
+      })
+      .map(conv => conv.id);
+    
     return Array.from(this.messages.values())
-      .filter(
-        (msg) =>
-          (msg.senderId === user1Id && msg.receiverId === user2Id) ||
-          (msg.senderId === user2Id && msg.receiverId === user1Id),
-      )
+      .filter(msg => relevantConversations.includes(msg.conversationId))
       .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
   }
 
   async getMessagesByUser(userId: string): Promise<Message[]> {
-    return Array.from(this.messages.values()).filter(
-      (msg) => msg.senderId === userId || msg.receiverId === userId,
-    );
+    // Find conversations that include the user
+    const userConversations = Array.from(this.conversations.values())
+      .filter(conv => {
+        const participants = conv.participants as string[];
+        return participants.includes(userId);
+      })
+      .map(conv => conv.id);
+    
+    return Array.from(this.messages.values())
+      .filter(msg => userConversations.includes(msg.conversationId));
   }
 
   async markMessageAsRead(id: string): Promise<Message | undefined> {
@@ -451,8 +469,18 @@ export class MemStorage implements IStorage {
   }
 
   async getUnreadMessageCount(userId: string): Promise<number> {
+    // Find conversations that include the user
+    const userConversations = Array.from(this.conversations.values())
+      .filter(conv => {
+        const participants = conv.participants as string[];
+        return participants.includes(userId);
+      })
+      .map(conv => conv.id);
+    
     return Array.from(this.messages.values()).filter(
-      (msg) => msg.receiverId === userId && !msg.isRead,
+      (msg) => userConversations.includes(msg.conversationId) && 
+                msg.senderId !== userId && 
+                !msg.isRead,
     ).length;
   }
 

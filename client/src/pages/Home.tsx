@@ -3,12 +3,16 @@ import { Link } from "wouter";
 import HeroSection from "@/components/HeroSection";
 import ListingCard from "@/components/ListingCard";
 import AuthModal from "@/components/AuthModal";
+import DetailsModal from "@/components/DetailsModal";
+import ChatModal from "@/components/ChatModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Leaf, Users, TrendingDown, ArrowRight } from "lucide-react";
 
 export default function Home() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+  const [showChatFor, setShowChatFor] = useState<string | null>(null);
 
   const featuredListings = [
     {
@@ -84,8 +88,8 @@ export default function Home() {
               <ListingCard
                 key={listing.id}
                 listing={listing}
-                onViewDetails={(id) => console.log('View details:', id)}
-                onContact={(id) => console.log('Contact:', id)}
+                onViewDetails={(id) => setSelectedListingId(id)}
+                onContact={(id) => setShowChatFor(id)}
               />
             ))}
           </div>
@@ -215,19 +219,99 @@ export default function Home() {
       <AuthModal
         open={authModalOpen}
         onOpenChange={setAuthModalOpen}
-        onLogin={(email, password) => {
-          console.log('Login:', email, password);
-          setAuthModalOpen(false);
+        onLogin={async (email, password) => {
+          console.log('=== LOGIN STARTED ===');
+          console.log('Login credentials:', { email, password: '***' });
+          try {
+            const response = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email, password }),
+            });
+
+            console.log('Login response status:', response.status);
+            const userData = await response.json();
+            console.log('Login response data:', userData);
+
+            if (response.ok) {
+              console.log('Login successful, storing user data');
+              localStorage.setItem('user', JSON.stringify(userData));
+              window.dispatchEvent(new CustomEvent('userUpdated'));
+              setAuthModalOpen(false);
+              console.log('Redirecting to dashboard');
+              window.location.href = '/dashboard';
+            } else {
+              console.error('Login failed:', userData);
+              alert('Login failed: ' + (userData.error || 'Invalid credentials'));
+            }
+          } catch (error) {
+            console.error('Login error:', error);
+            alert('Login failed. Please try again.');
+          }
         }}
-        onRegister={(data) => {
-          console.log('Register:', data);
-          setAuthModalOpen(false);
+        onRegister={async (data) => {
+          console.log('=== REGISTRATION STARTED ===');
+          console.log('Registration data:', data);
+          try {
+            const response = await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                businessType: data.businessType,
+                location: data.location,
+                phone: data.phone
+              }),
+            });
+
+            console.log('Registration response status:', response.status);
+            const responseData = await response.json();
+            console.log('Registration response data:', responseData);
+
+            if (response.ok) {
+              console.log('Registration successful, storing user data');
+              localStorage.setItem('user', JSON.stringify(responseData));
+              window.dispatchEvent(new CustomEvent('userUpdated'));
+              setAuthModalOpen(false);
+              console.log('Redirecting to dashboard');
+              window.location.href = '/dashboard';
+            } else {
+              console.error('Registration failed:', responseData);
+              alert('Registration failed: ' + (responseData.error || 'Unknown error'));
+            }
+          } catch (error) {
+            console.error('Registration error:', error);
+            alert('Registration failed. Please try again.');
+          }
         }}
         onGoogleAuth={() => {
           console.log('Google auth');
           setAuthModalOpen(false);
         }}
       />
+
+      {/* Details Modal */}
+      {selectedListingId && (
+        <DetailsModal
+          listing={featuredListings.find(l => l.id === selectedListingId)!}
+          onClose={() => setSelectedListingId(null)}
+          onContact={() => setShowChatFor(selectedListingId)}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {showChatFor && (
+        <ChatModal
+          listing={featuredListings.find(l => l.id === showChatFor)!}
+          onClose={() => setShowChatFor(null)}
+        />
+      )}
     </div>
   );
 }

@@ -2,8 +2,9 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { WebSocketServer } from "ws";
-import { db } from "./db";
+import { db, driver } from "./db";
 import { communityMessages as communityMessagesTable } from "@shared/schema";
+import { sql } from "drizzle-orm";
 
 const app = express();
 app.use(express.json());
@@ -60,6 +61,114 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
+  // Setup WebSocket for community chat and messaging (outside of listen to avoid multiple instances)
+  const wss = new WebSocketServer({ server });
+  const userConnections = new Map<string, any>(); // Track user connections
+
+  // Setup WebSocket event handlers (only once)
+  wss.on('connection', (ws: any) => {
+    // Add error handling for WebSocket
+    ws.on('error', (error: any) => {
+      console.error('WebSocket error:', error);
+    });
+    // Handle user authentication/identification
+    ws.on('message', async (raw: any) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        
+        if (msg.type === 'authenticate') {
+          // Store user connection
+          userConnections.set(msg.userId, ws);
+          ws.userId = msg.userId; // Store userId on websocket
+          return;
+        }
+        
+        if (msg.type === 'community_message') {
+          const payload = { communityId: msg.communityId, authorId: msg.authorId, content: msg.content };
+          if (db) {
+            if (driver === 'mysql') {
+              // @ts-ignore
+              await db.execute(sql`INSERT INTO community_messages (community_id, author_id, content) VALUES (${payload.communityId}, ${payload.authorId}, ${payload.content});`);
+            } else {
+              await db.insert(communityMessagesTable).values(payload).returning();
+            }
+          }
+          wss.clients.forEach((client) => {
+            if ((client as any).readyState === 1) {
+              client.send(JSON.stringify({ type: 'community_message', ...payload, createdAt: new Date().toISOString() }));
+            }
+          });
+        } else if (msg.type === 'direct_message') {
+          // Handle direct messaging between users
+          const { conversationId, senderId, receiverId, content } = msg;
+          
+          if (db && driver === 'mysql') {
+            // Save message to database
+            await db.execute(
+              sql`INSERT INTO messages (conversation_id, sender_id, receiver_id, content) VALUES (${conversationId}, ${senderId}, ${receiverId}, ${content})`
+            );
+            
+            // Update conversation timestamp
+            await db.execute(
+              sql`UPDATE conversations SET updated_at = NOW() WHERE id = ${conversationId}`
+            );
+          }
+          
+          // Send message to receiver if they're connected
+          const receiverWs = userConnections.get(receiverId);
+          if (receiverWs && receiverWs.readyState === 1) {
+            receiverWs.send(JSON.stringify({
+              type: 'direct_message',
+              conversationId,
+              senderId,
+              receiverId,
+              content,
+              createdAt: new Date().toISOString()
+            }));
+          }
+          
+          // Send confirmation back to sender
+          ws.send(JSON.stringify({
+            type: 'message_sent',
+            conversationId,
+            senderId,
+            receiverId,
+            content,
+            createdAt: new Date().toISOString()
+          }));
+        } else if (msg.type === 'message') {
+          // Handle legacy message format
+          const payload: any = { 
+            conversationId: msg.conversationId, 
+            senderId: msg.senderId, 
+            content: msg.content,
+            messageType: msg.messageType || 'text',
+            offerAmount: msg.offerAmount
+          };
+          wss.clients.forEach((client) => {
+            if ((client as any).readyState === 1) {
+              client.send(JSON.stringify({ 
+                type: 'message',
+                ...payload, 
+                id: msg.id || 'temp-id',
+                createdAt: new Date().toISOString() 
+              }));
+            }
+          });
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    // Handle connection close
+    ws.on('close', () => {
+      if (ws.userId) {
+        userConnections.delete(ws.userId);
+      }
+    });
+  });
+
   // Windows-safe listen, with retry if port in use
   const basePort = parseInt(process.env.PORT || '5000', 10);
   const listenOn = (candidatePort: number, remainingRetries: number) => {
@@ -86,46 +195,6 @@ app.use((req, res, next) => {
     server.listen(listenOptions, () => {
       server.off('error', onError);
       log(`serving on port ${candidatePort}`);
-
-      // Setup WebSocket for community chat and messaging
-      const wss = new WebSocketServer({ server });
-      wss.on('connection', (ws) => {
-        ws.on('message', async (raw) => {
-          try {
-            const msg = JSON.parse(raw.toString());
-            if (msg.type === 'community_message') {
-              const payload = { communityId: msg.communityId, authorId: msg.authorId, content: msg.content };
-              if (db) {
-                await db.insert(communityMessagesTable).values(payload).returning();
-              }
-              wss.clients.forEach((client) => {
-                if ((client as any).readyState === 1) {
-                  client.send(JSON.stringify({ type: 'community_message', ...payload, createdAt: new Date().toISOString() }));
-                }
-              });
-            } else if (msg.type === 'message') {
-              // Handle real-time messaging
-              const payload = { 
-                conversationId: msg.conversationId, 
-                senderId: msg.senderId, 
-                content: msg.content,
-                type: msg.messageType || 'text',
-                offerAmount: msg.offerAmount
-              };
-              wss.clients.forEach((client) => {
-                if ((client as any).readyState === 1) {
-                  client.send(JSON.stringify({ 
-                    type: 'message', 
-                    ...payload, 
-                    id: msg.id || 'temp-id',
-                    createdAt: new Date().toISOString() 
-                  }));
-                }
-              });
-            }
-          } catch {}
-        });
-      });
     });
   };
 

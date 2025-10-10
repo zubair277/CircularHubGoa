@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CircularGoa Complete Flow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #17a2b8; font-weight: bold; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .step { background: #e9ecef; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .result { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 CircularGoa Complete Flow Test</h1>
+        <p>This page tests the complete user registration and listing creation flow.</p>
+
+        <div class="section">
+            <h2>📊 System Status</h2>
+            <div id="systemStatus">Checking system status...</div>
+        </div>
+
+        <div class="section">
+            <h2>👤 Step 1: User Registration</h2>
+            <div class="step">
+                <form id="registerForm">
+                    <input type="text" id="regName" placeholder="Business Name" value="Test Restaurant">
+                    <input type="email" id="regEmail" placeholder="Email" value="testrestaurant3@example.com">
+                    <input type="password" id="regPassword" placeholder="Password" value="password123">
+                    <input type="text" id="regType" placeholder="Business Type" value="Restaurant">
+                    <button type="submit">Register User</button>
+                </form>
+            </div>
+            <div id="registerResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>📝 Step 2: Create Listing</h2>
+            <div class="step">
+                <form id="listingForm">
+                    <input type="text" id="title" placeholder="Title" value="Fresh Organic Waste">
+                    <textarea id="description" placeholder="Description">Daily organic waste from restaurant kitchen</textarea>
+                    <input type="text" id="category" placeholder="Category" value="organic">
+                    <input type="text" id="quantity" placeholder="Quantity" value="15">
+                    <input type="text" id="unit" placeholder="Unit" value="kg">
+                    <input type="text" id="latitude" placeholder="Latitude" value="15.4909">
+                    <input type="text" id="longitude" placeholder="Longitude" value="73.8278">
+                    <button type="submit">Create Listing</button>
+                </form>
+            </div>
+            <div id="listingResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Step 3: View All Listings</h2>
+            <div class="step">
+                <button onclick="fetchListings()">Fetch All Listings</button>
+                <button onclick="fetchUsers()">Fetch All Users (if available)</button>
+            </div>
+            <div id="listingsResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Debug Information</h2>
+            <div class="step">
+                <button onclick="checkLocalStorage()">Check Local Storage</button>
+                <button onclick="clearLocalStorage()">Clear Local Storage</button>
+                <button onclick="testDirectAPI()">Test Direct API Calls</button>
+            </div>
+            <div id="debugResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        // Check system status
+        async function checkSystemStatus() {
+            const statusDiv = document.getElementById('systemStatus');
+            let backendStatus = '❌ Unknown';
+            let frontendStatus = '❌ Unknown';
+            let proxyStatus = '❌ Unknown';
+            
+            try {
+                // Test backend directly
+                try {
+                    const backendResponse = await fetch('http://localhost:5000/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: 'test@test.com', password: 'test', businessName: 'Test', businessType: 'Test', location: 'Test', latitude: '0', longitude: '0', phone: null, avatar: null, verified: false })
+                    });
+                    if (backendResponse.ok) {
+                        backendStatus = '✅ Running (Port 5000)';
+                    } else {
+                        backendStatus = `❌ Error: ${backendResponse.status}`;
+                    }
+                } catch (e) {
+                    backendStatus = `❌ Failed: ${e.message}`;
+                }
+                
+                // Test frontend proxy
+                try {
+                    const frontendResponse = await fetch('http://localhost:5173/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: 'test2@test.com', password: 'test', businessName: 'Test', businessType: 'Test', location: 'Test', latitude: '0', longitude: '0', phone: null, avatar: null, verified: false })
+                    });
+                    if (frontendResponse.ok) {
+                        frontendStatus = '✅ Running (Port 5173)';
+                        proxyStatus = '✅ Working';
+                    } else {
+                        frontendStatus = `❌ Error: ${frontendResponse.status}`;
+                        proxyStatus = '❌ Failed';
+                    }
+                } catch (e) {
+                    frontendStatus = `❌ Failed: ${e.message}`;
+                    proxyStatus = '❌ Failed';
+                }
+
+                statusDiv.innerHTML = `
+                    <div>Backend Server: ${backendStatus}</div>
+                    <div>Frontend Server: ${frontendStatus}</div>
+                    <div>API Proxy: ${proxyStatus}</div>
+                    <div class="info">ℹ️ Refresh this page if servers were just started</div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="error">❌ System Status Check Failed</div>
+                    <div class="error">Error: ${error.message}</div>
+                    <div class="info">ℹ️ Make sure both servers are running: npm run dev:full</div>
+                `;
+            }
+        }
+
+        // Step 1: Register User
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const userData = {
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                businessName: document.getElementById('regName').value,
+                businessType: document.getElementById('regType').value,
+                location: 'Goa, India',
+                latitude: '15.2993',
+                longitude: '74.1240',
+                phone: null,
+                avatar: null,
+                verified: false
+            };
+            
+            try {
+                document.getElementById('registerResult').innerHTML = '<div class="info">🔄 Registering user...</div>';
+                
+                console.log('Sending registration request:', userData);
+                const response = await fetch('http://localhost:5173/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData),
+                });
+                
+                console.log('Registration response status:', response.status);
+                const result = await response.json();
+                console.log('Registration response data:', result);
+                
+                if (response.ok) {
+                    currentUser = result;
+                    document.getElementById('registerResult').innerHTML = `
+                        <div class="success">✅ Registration successful!</div>
+                        <div class="info">User ID: ${result.id}</div>
+                        <div class="info">Email: ${result.email}</div>
+                        <div class="info">Business: ${result.businessName}</div>
+                        <div class="result">Full Response: ${JSON.stringify(result, null, 2)}</div>
+                    `;
+                } else {
+                    document.getElementById('registerResult').innerHTML = `
+                        <div class="error">❌ Registration failed</div>
+                        <div class="result">Error: ${JSON.stringify(result, null, 2)}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('registerResult').innerHTML = `
+                    <div class="error">❌ Error: ${error.message}</div>
+                `;
+            }
+        });
+
+        // Step 2: Create Listing
+        document.getElementById('listingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                document.getElementById('listingResult').innerHTML = `
+                    <div class="error">❌ Please register a user first</div>
+                `;
+                return;
+            }
+            
+            // Generate a unique ID for the listing
+            const listingId = 'listing_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            const listingData = {
+                id: listingId,
+                userId: currentUser.id,
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
+                quantity: parseFloat(document.getElementById('quantity').value) || 0,
+                unit: document.getElementById('unit').value,
+                location: 'Goa, India',
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value,
+                availability: 'one-time',
+                listingType: 'offer',
+                imageUrl: null,
+                status: 'available',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                // Add properties required by ListingCard
+                businessName: currentUser.businessName || 'Unknown Business',
+                businessType: currentUser.businessType || 'Business',
+                distance: Math.random() * 5 // Generate random distance
+            };
+            
+            try {
+                document.getElementById('listingResult').innerHTML = '<div class="info">🔄 Creating listing...</div>';
+                
+                console.log('Creating listing data:', listingData);
+                
+                // Get existing listings from localStorage
+                const existingListings = JSON.parse(localStorage.getItem('listings') || '[]');
+                
+                // Add the new listing
+                existingListings.push(listingData);
+                
+                // Save back to localStorage
+                localStorage.setItem('listings', JSON.stringify(existingListings));
+                
+                console.log('Listing saved to localStorage:', listingData);
+                console.log('Total listings in localStorage:', existingListings.length);
+                
+                document.getElementById('listingResult').innerHTML = `
+                    <div class="success">✅ Listing created successfully!</div>
+                    <div class="info">Listing ID: ${listingData.id}</div>
+                    <div class="info">Title: ${listingData.title}</div>
+                    <div class="info">Category: ${listingData.category}</div>
+                    <div class="info">Total listings: ${existingListings.length}</div>
+                    <div class="result">Full Data: ${JSON.stringify(listingData, null, 2)}</div>
+                `;
+            } catch (error) {
+                document.getElementById('listingResult').innerHTML = `
+                    <div class="error">❌ Error: ${error.message}</div>
+                `;
+            }
+        });
+
+        // Step 3: Fetch Listings
+        async function fetchListings() {
+            try {
+                document.getElementById('listingsResult').innerHTML = '<div class="info">🔄 Fetching listings...</div>';
+                
+                // Get listings from localStorage
+                const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+                
+                document.getElementById('listingsResult').innerHTML = `
+                    <div class="success">✅ Found ${storedListings.length} listings in localStorage</div>
+                    <div class="result">${JSON.stringify(storedListings, null, 2)}</div>
+                `;
+            } catch (error) {
+                document.getElementById('listingsResult').innerHTML = `
+                    <div class="error">❌ Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Debug functions
+        function checkLocalStorage() {
+            const user = localStorage.getItem('user');
+            const listings = localStorage.getItem('listings');
+            document.getElementById('debugResult').innerHTML = `
+                <div class="info">Local Storage Contents:</div>
+                <div class="result">User: ${user || 'No user data found'}</div>
+                <div class="result">Listings: ${listings || 'No listings found'}</div>
+            `;
+        }
+
+        function clearLocalStorage() {
+            localStorage.clear();
+            currentUser = null;
+            document.getElementById('debugResult').innerHTML = `
+                <div class="success">✅ Local storage cleared</div>
+            `;
+        }
+
+        async function testDirectAPI() {
+            try {
+                const response = await fetch('http://localhost:5173/api/listings');
+                const result = await response.json();
+                document.getElementById('debugResult').innerHTML = `
+                    <div class="success">✅ Direct API test successful</div>
+                    <div class="result">Response: ${JSON.stringify(result, null, 2)}</div>
+                `;
+            } catch (error) {
+                document.getElementById('debugResult').innerHTML = `
+                    <div class="error">❌ Direct API test failed</div>
+                    <div class="result">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Initialize
+        checkSystemStatus();
+    </script>
+</body>
+</html>

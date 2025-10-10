@@ -1,0 +1,32 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="40" cy="40" r="40" fill="#4CAF50"/>
+  
+  <!-- Face shape -->
+  <ellipse cx="40" cy="45" rx="25" ry="30" fill="#2E7D32"/>
+  
+  <!-- Eyes -->
+  <circle cx="32" cy="35" r="4" fill="#000000"/>
+  <circle cx="48" cy="35" r="4" fill="#000000"/>
+  
+  <!-- Eye highlights -->
+  <circle cx="33" cy="33" r="1" fill="#FFFFFF"/>
+  <circle cx="49" cy="33" r="1" fill="#FFFFFF"/>
+  
+  <!-- Angry eyebrows -->
+  <path d="M25 30 Q32 25 35 30" stroke="#000000" stroke-width="3" fill="none"/>
+  <path d="M45 30 Q52 25 55 30" stroke="#000000" stroke-width="3" fill="none"/>
+  
+  <!-- Nose -->
+  <ellipse cx="40" cy="42" rx="3" ry="2" fill="#1B5E20"/>
+  
+  <!-- Mouth - angry expression -->
+  <path d="M30 50 Q40 55 50 50" stroke="#000000" stroke-width="2" fill="none"/>
+  
+  <!-- Hair -->
+  <path d="M20 25 Q25 15 30 20 Q35 10 40 20 Q45 10 50 20 Q55 15 60 25 Q55 30 50 25 Q45 30 40 25 Q35 30 30 25 Q25 30 20 25" fill="#1B5E20"/>
+  
+  <!-- Muscles/definition -->
+  <path d="M25 40 Q30 35 35 40" stroke="#1B5E20" stroke-width="2" fill="none"/>
+  <path d="M45 40 Q50 35 55 40" stroke="#1B5E20" stroke-width="2" fill="none"/>
+</svg>

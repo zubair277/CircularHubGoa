@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ListingCard from "@/components/ListingCard";
 import MapView from "@/components/MapView";
 import CreateAlertModal from "@/components/CreateAlertModal";
+import DetailsModal from "@/components/DetailsModal";
+import ChatModal from "@/components/ChatModal";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Search, Filter, MapIcon, List, Bell } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -23,10 +28,200 @@ export default function Marketplace() {
   const [showChatFor, setShowChatFor] = useState<string | null>(null);
   const [showScheduleFor, setShowScheduleFor] = useState<string | null>(null);
   const [showCreateAlert, setShowCreateAlert] = useState(false);
+  const [listings, setListings] = useState<any[]>([]);
 
+  // Load listings from localStorage (primary) and API (fallback)
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        // Always include fallback listings
+        const fallbackListings = [
+          {
+            id: 'fallback-1',
+            title: 'Fresh Organic Kitchen Waste',
+            description: 'Daily kitchen waste from our beach restaurant. Perfect for composting.',
+            category: 'organic',
+            quantity: 25,
+            unit: 'kg',
+            location: 'Goa, India',
+            latitude: '15.4909',
+            longitude: '73.8278',
+            availability: 'one-time',
+            listingType: 'offer',
+            status: 'available',
+            imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop&crop=center',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            businessName: 'Sunset Shack',
+            businessType: 'Restaurant',
+            distance: 2.3,
+            userId: 'demo-user-1'
+          },
+          {
+            id: 'fallback-2',
+            title: 'Packaging Boxes',
+            description: 'Card boxes from art supplies, clean and ready for reuse.',
+            category: 'paper',
+            quantity: 15,
+            unit: 'units',
+            location: 'Goa, India',
+            latitude: '15.4909',
+            longitude: '73.8278',
+            availability: 'one-time',
+            listingType: 'offer',
+            status: 'available',
+            imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            businessName: 'Art Studio Goa',
+            businessType: 'Art Studio',
+            distance: 1.5,
+            userId: 'demo-user-2'
+          }
+        ];
+
+        // Load from localStorage
+          const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+        console.log('Marketplace: Loaded listings from localStorage:', storedListings);
+        
+        // Combine localStorage listings with fallback listings
+        const allListings = [...storedListings, ...fallbackListings];
+        console.log('Marketplace: Combined listings (localStorage + fallback):', allListings);
+        console.log('Marketplace: Checking imageUrls in listings:', allListings.map(l => ({ id: l.id, title: l.title, imageUrl: l.imageUrl })));
+        setListings(allListings);
+      } catch (error) {
+        console.error('Marketplace: Error fetching listings:', error);
+        // Use localStorage as fallback
+        const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+        setListings(storedListings);
+      }
+    };
+
+    fetchListings();
+
+    // Listen for storage changes to update listings when new ones are added
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'listings') {
+        // Always include fallback listings when localStorage changes
+        const fallbackListings = [
+          {
+            id: 'fallback-1',
+            title: 'Fresh Organic Kitchen Waste',
+            description: 'Daily kitchen waste from our beach restaurant. Perfect for composting.',
+            category: 'organic',
+            quantity: 25,
+            unit: 'kg',
+            location: 'Goa, India',
+            latitude: '15.4909',
+            longitude: '73.8278',
+            availability: 'one-time',
+            listingType: 'offer',
+            status: 'available',
+            imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop&crop=center',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            businessName: 'Sunset Shack',
+            businessType: 'Restaurant',
+            distance: 2.3,
+            userId: 'demo-user-1'
+          },
+          {
+            id: 'fallback-2',
+            title: 'Packaging Boxes',
+            description: 'Card boxes from art supplies, clean and ready for reuse.',
+            category: 'paper',
+            quantity: 15,
+            unit: 'units',
+            location: 'Goa, India',
+            latitude: '15.4909',
+            longitude: '73.8278',
+            availability: 'one-time',
+            listingType: 'offer',
+            status: 'available',
+            imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            businessName: 'Art Studio Goa',
+            businessType: 'Art Studio',
+            distance: 1.5,
+            userId: 'demo-user-2'
+          }
+        ];
+        const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+        const allListings = [...storedListings, ...fallbackListings];
+        console.log('Marketplace: Storage changed, reloading combined listings:', allListings);
+        setListings(allListings);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events for same-tab updates
+    const handleListingUpdate = () => {
+      // Always include fallback listings when listings are updated
+      const fallbackListings = [
+        {
+          id: 'fallback-1',
+          title: 'Fresh Organic Kitchen Waste',
+          description: 'Daily kitchen waste from our beach restaurant. Perfect for composting.',
+          category: 'organic',
+          quantity: 25,
+          unit: 'kg',
+          location: 'Goa, India',
+          latitude: '15.4909',
+          longitude: '73.8278',
+          availability: 'one-time',
+          listingType: 'offer',
+          status: 'available',
+          imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop&crop=center',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          businessName: 'Sunset Shack',
+          businessType: 'Restaurant',
+          distance: 2.3,
+          userId: 'demo-user-1'
+        },
+        {
+          id: 'fallback-2',
+          title: 'Packaging Boxes',
+          description: 'Card boxes from art supplies, clean and ready for reuse.',
+          category: 'paper',
+          quantity: 15,
+          unit: 'units',
+          location: 'Goa, India',
+          latitude: '15.4909',
+          longitude: '73.8278',
+          availability: 'one-time',
+          listingType: 'offer',
+          status: 'available',
+          imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          businessName: 'Art Studio Goa',
+          businessType: 'Art Studio',
+          distance: 1.5,
+          userId: 'demo-user-2'
+        }
+      ];
+      const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+      const allListings = [...storedListings, ...fallbackListings];
+      console.log('Marketplace: Listing updated, reloading combined listings:', allListings);
+      setListings(allListings);
+    };
+
+    window.addEventListener('listingUpdated', handleListingUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('listingUpdated', handleListingUpdate);
+    };
+  }, []);
+
+  // Fallback mock listings if localStorage is empty
   const mockListings = [
     {
       id: "1",
+      user_id: "mock-user-1",
       title: "Fresh Organic Kitchen Waste",
       category: "Organic",
       description: "Daily kitchen waste from our beachside restaurant. Perfect for composting.",
@@ -43,6 +238,7 @@ export default function Marketplace() {
     },
     {
       id: "2",
+      user_id: "mock-user-2",
       title: "Clean Glass Bottles",
       category: "Glass",
       description: "Assorted glass bottles from hotel bar, cleaned and ready for reuse",
@@ -59,6 +255,7 @@ export default function Marketplace() {
     },
     {
       id: "3",
+      user_id: "mock-user-3",
       title: "Cardboard Packaging Boxes",
       category: "Paper",
       description: "Sturdy cardboard boxes from art supplies, various sizes",
@@ -75,6 +272,7 @@ export default function Marketplace() {
     },
     {
       id: "4",
+      user_id: "mock-user-4",
       title: "Plastic Containers",
       category: "Plastic",
       description: "Clean plastic containers from bulk food storage",
@@ -91,27 +289,50 @@ export default function Marketplace() {
     },
   ];
 
-  const mapListings = mockListings.map(listing => ({
-    id: listing.id,
-    title: listing.title,
-    category: listing.category,
-    latitude: listing.latitude,
-    longitude: listing.longitude,
-    businessName: listing.businessName,
-    distance: listing.distance,
-  }));
+  // Use listings from state (which includes fallback listings)
+  const displayListings = listings;
+  
+  const mapListings = displayListings.map(listing => {
+    try {
+      return {
+        id: listing.id || 'unknown',
+        title: listing.title || 'Untitled',
+        category: listing.category || 'Other',
+        latitude: parseFloat(listing.latitude) || 15.4909,
+        longitude: parseFloat(listing.longitude) || 73.8278,
+        businessName: listing.businessName || 'Unknown Business',
+        distance: listing.distance || Math.random() * 5, // Generate random distance if not available
+      };
+    } catch (error) {
+      console.error('Error mapping listing:', listing, error);
+      return {
+        id: 'error',
+        title: 'Error Loading Listing',
+        category: 'Error',
+        latitude: 15.4909,
+        longitude: 73.8278,
+        businessName: 'Error',
+        distance: 0,
+      };
+    }
+  });
 
   // Filter listings based on search query and category
-  const filteredListings = mockListings.filter((listing) => {
-    const matchesSearch = !searchQuery || 
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = categoryFilter === "all" || 
-      listing.category.toLowerCase() === categoryFilter.toLowerCase();
-    
-    return matchesSearch && matchesCategory;
+  const filteredListings = displayListings.filter((listing) => {
+    try {
+      const matchesSearch = !searchQuery || 
+        (listing.title && listing.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (listing.description && listing.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (listing.category && listing.category.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesCategory = categoryFilter === "all" || 
+        (listing.category && listing.category.toLowerCase() === categoryFilter.toLowerCase());
+      
+      return matchesSearch && matchesCategory;
+    } catch (error) {
+      console.error('Error filtering listing:', listing, error);
+      return false;
+    }
   });
 
   const hasResults = filteredListings.length > 0;
@@ -178,7 +399,12 @@ export default function Marketplace() {
                   <ListingCard
                     key={listing.id}
                     listing={listing}
-                    onViewDetails={(id) => setSelectedId(id)}
+                    onViewDetails={(id) => {
+                      console.log('View button clicked for listing ID:', id);
+                      console.log('Setting selectedId to:', id);
+                      setSelectedId(id);
+                      console.log('selectedId should now be:', id);
+                    }}
                     onContact={(id) => setShowChatFor(id)}
                   />
                 ))}
@@ -220,26 +446,124 @@ export default function Marketplace() {
       </div>
 
       {/* Details Modal */}
-      {selectedId && (
-        <DetailsModal
-          listing={mockListings.find(l => l.id === selectedId)!}
-          onClose={() => setSelectedId(null)}
-          onContact={() => setShowChatFor(selectedId)}
-          onSchedule={() => setShowScheduleFor(selectedId)}
-        />
-      )}
+      {selectedId && (() => {
+        const foundListing = displayListings.find(l => l.id === selectedId);
+        console.log('DetailsModal: selectedId:', selectedId);
+        console.log('DetailsModal: displayListings length:', displayListings.length);
+        console.log('DetailsModal: Available listings:', displayListings.map(l => ({ id: l.id, title: l.title })));
+        console.log('DetailsModal: Found listing:', foundListing);
+        
+        if (!foundListing) {
+          console.error('DetailsModal: Listing not found!');
+          return null;
+        }
+        
+        // Ensure the listing has all required fields with fallbacks
+        const formattedListing = {
+          id: foundListing.id || 'unknown',
+          title: foundListing.title || 'Untitled Listing',
+          category: foundListing.category || 'general',
+          description: foundListing.description || 'No description available',
+          quantity: foundListing.quantity || 0,
+          unit: foundListing.unit || 'units',
+          businessName: foundListing.businessName || 'Unknown Business',
+          businessType: foundListing.businessType || 'Business',
+          status: foundListing.status || 'available',
+          createdAt: foundListing.createdAt || new Date().toISOString(),
+          imageUrl: foundListing.imageUrl || null,
+          latitude: foundListing.latitude || 15.4909,
+          longitude: foundListing.longitude || 73.8278,
+          distance: foundListing.distance || 0
+        };
+        
+        console.log('DetailsModal: Formatted listing:', formattedListing);
+        
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">{formattedListing.title}</h2>
+                <Button variant="outline" onClick={() => setSelectedId(null)}>×</Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  {formattedListing.imageUrl ? (
+                    <img src={formattedListing.imageUrl} alt={formattedListing.title} className="w-full h-48 object-cover rounded-lg" />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-500">No image available</span>
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-gray-600">{formattedListing.description}</p>
+                  
+                  <div className="flex gap-2 items-center">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+                      {formattedListing.status === 'available' ? 'Available' : formattedListing.status}
+                    </span>
+                    <span className="text-sm">{formattedListing.quantity} {formattedListing.unit} available</span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm">
+                      <strong>Business:</strong> {formattedListing.businessName} ({formattedListing.businessType})
+                    </div>
+                    {formattedListing.distance > 0 && (
+                      <div className="text-sm text-gray-500">
+                        {formattedListing.distance}km away
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button onClick={() => setShowChatFor(selectedId)} className="rounded-full">
+                      Contact Seller
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowScheduleFor(selectedId)} className="rounded-full">
+                      Schedule Pickup
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="h-64 bg-gray-100 rounded-lg flex flex-col items-center justify-center p-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-3 mx-auto">
+                      <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Location</h3>
+                    <p className="text-sm text-gray-500 mb-2">
+                      {formattedListing.businessName}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {formattedListing.distance > 0 ? `${formattedListing.distance}km away` : 'Goa, India'}
+                    </p>
+                    <div className="mt-3 text-xs text-gray-400">
+                      📍 Interactive map coming soon
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
 
       {/* Chat Modal */}
       {showChatFor && (
         <ChatModal
-          listing={mockListings.find(l => l.id === showChatFor)!}
+          listing={displayListings.find(l => l.id === showChatFor)!}
           onClose={() => setShowChatFor(null)}
         />
       )}
 
       {showScheduleFor && (
         <ScheduleModal
-          listing={mockListings.find(l => l.id === showScheduleFor)!}
+          listing={displayListings.find(l => l.id === showScheduleFor)!}
           onClose={() => setShowScheduleFor(null)}
         />
       )}
@@ -255,85 +579,6 @@ export default function Marketplace() {
   );
 }
 
-function DetailsModal({ listing, onClose, onContact, onSchedule }: { listing: any; onClose: () => void; onContact: () => void; onSchedule: () => void }) {
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{listing.title}</DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            {listing.imageUrl && (
-              <img src={listing.imageUrl} alt={listing.title} className="w-full h-64 object-cover rounded-lg" />
-            )}
-            <p className="text-sm text-muted-foreground">{listing.description}</p>
-            <div className="flex gap-2 items-center">
-              <Badge variant="outline">{listing.status === 'available' ? 'Available' : listing.status}</Badge>
-              <span className="text-sm">{listing.quantity} {listing.unit} available</span>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={onContact} className="rounded-full">Contact Seller</Button>
-              <Button variant="outline" onClick={onSchedule} className="rounded-full">Schedule Pickup</Button>
-              <GetQuoteButton listing={listing} />
-            </div>
-          </div>
-          <div className="h-72">
-            <MapView
-              listings={[{
-                id: listing.id,
-                title: listing.title,
-                category: listing.category,
-                latitude: listing.latitude,
-                longitude: listing.longitude,
-                businessName: listing.businessName,
-                distance: listing.distance,
-              }]}
-              center={[listing.latitude, listing.longitude]}
-              zoom={14}
-            />
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ChatModal({ listing, onClose }: { listing: any; onClose: () => void }) {
-  const [messages, setMessages] = useState<{ from: 'me' | 'seller'; text: string }[]>([
-    { from: 'seller', text: `Hi! ${listing.title} is available.` }
-  ]);
-  const [text, setText] = useState("");
-
-  const send = () => {
-    if (!text.trim()) return;
-    setMessages((m) => [...m, { from: 'me', text }]);
-    setText("");
-  };
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Message {listing.businessName}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col h-80 border rounded-lg">
-          <div className="flex-1 overflow-auto p-3 space-y-2">
-            {messages.map((m, i) => (
-              <div key={i} className={`max-w-[80%] px-3 py-2 rounded-xl ${m.from === 'me' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-muted'}`}>
-                {m.text}
-              </div>
-            ))}
-          </div>
-          <div className="p-2 border-t flex gap-2">
-            <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." className="h-10 resize-none" />
-            <Button onClick={send} className="shrink-0 rounded-full">Send</Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function GetQuoteButton({ listing }: { listing: any }) {
   const [open, setOpen] = useState(false);
@@ -390,17 +635,72 @@ function GetQuoteButton({ listing }: { listing: any }) {
 function ScheduleModal({ listing, onClose }: { listing: any; onClose: () => void }) {
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
-  const [note, setNote] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [amount, setAmount] = useState<string>("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const submit = () => {
-    if (!date || !time) return;
-    console.log("Pickup scheduled:", { listingId: listing.id, date, time, note });
-    toast({
-      title: "Pickup scheduled",
-      description: `We notified ${listing.businessName}. ${new Date(date + 'T' + time).toLocaleString()}`,
-    });
-    onClose();
+  // Get current user from localStorage
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const currentUserId = currentUser.id;
+
+  const submit = async () => {
+    if (!date || !time) {
+      toast({
+        title: "Error",
+        description: "Please select both date and time for pickup",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!currentUserId) {
+      toast({
+        title: "Error",
+        description: "Please log in to schedule a pickup",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/pickups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          listingId: listing.id,
+          userId: currentUserId,
+          scheduledDate: date,
+          scheduledTime: time,
+          description: description || null,
+          amountRequested: amount ? parseFloat(amount) : null,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Pickup scheduled successfully!",
+          description: `Your pickup has been scheduled for ${new Date(date + 'T' + time).toLocaleString()}`,
+        });
+        onClose();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to schedule pickup');
+      }
+    } catch (error: any) {
+      console.error('Error scheduling pickup:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to schedule pickup. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -408,22 +708,72 @@ function ScheduleModal({ listing, onClose }: { listing: any; onClose: () => void
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Schedule Pickup</DialogTitle>
+          <p className="text-sm text-muted-foreground">Schedule a pickup for: {listing.title}</p>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm text-muted-foreground">Date</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <label className="text-sm font-medium text-muted-foreground">Pickup Date</label>
+              <Input 
+                type="date" 
+                value={date} 
+                onChange={(e) => setDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                required
+              />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground">Time</label>
-              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+              <label className="text-sm font-medium text-muted-foreground">Pickup Time</label>
+              <Input 
+                type="time" 
+                value={time} 
+                onChange={(e) => setTime(e.target.value)}
+                required
+              />
             </div>
           </div>
-          <Textarea placeholder="Pickup notes (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="rounded-full">Cancel</Button>
-            <Button onClick={submit} className="rounded-full">Confirm</Button>
+          
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Extra Description</label>
+            <Textarea 
+              placeholder="Any additional notes or special instructions for pickup..."
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-h-[80px]"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Amount/Quantity</label>
+            <Input 
+              type="number"
+              placeholder="Enter amount or quantity (optional)"
+              value={amount} 
+              onChange={(e) => setAmount(e.target.value)}
+              min="0"
+              step="0.01"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Specify the amount or quantity you want to pick up
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={onClose} 
+              className="rounded-full"
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={submit} 
+              className="rounded-full"
+              disabled={loading}
+            >
+              {loading ? "Scheduling..." : "Schedule Pickup"}
+            </Button>
           </div>
         </div>
       </DialogContent>

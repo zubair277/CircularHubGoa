@@ -26,6 +26,8 @@ export interface RegisterData {
   email: string;
   password: string;
   businessType: string;
+  location: string;
+  phone?: string;
 }
 
 export default function AuthModal({
@@ -42,6 +44,8 @@ export default function AuthModal({
     email: "",
     password: "",
     businessType: "",
+    location: "",
+    phone: "",
   });
 
   const handleLogin = (e: React.FormEvent) => {
@@ -171,6 +175,29 @@ export default function AuthModal({
                   onChange={(e) => setRegisterData({ ...registerData, businessType: e.target.value })}
                   required
                   data-testid="input-register-business-type"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="register-location">Location</Label>
+                <Input
+                  id="register-location"
+                  type="text"
+                  placeholder="Goa, India"
+                  value={registerData.location}
+                  onChange={(e) => setRegisterData({ ...registerData, location: e.target.value })}
+                  required
+                  data-testid="input-register-location"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="register-phone">Phone Number (Optional)</Label>
+                <Input
+                  id="register-phone"
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={registerData.phone}
+                  onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                  data-testid="input-register-phone"
                 />
               </div>
               <Button type="submit" className="w-full rounded-full shadow-md hover:shadow-lg transition-all duration-300" data-testid="button-register-submit">

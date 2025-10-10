@@ -2,17 +2,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Mail, Building2, Edit } from "lucide-react";
+import { MapPin, Mail, Building2, Edit, Camera } from "lucide-react";
 import DashboardStats from "@/components/DashboardStats";
+import ProfileAvatar from "@/components/ProfileAvatar";
+import ProfilePictureUpload from "@/components/ProfilePictureUpload";
+import { useState, useEffect } from "react";
 
 export default function Profile() {
+  const [user, setUser] = useState<{
+    id: string;
+    businessName?: string;
+    email?: string;
+    avatar?: string;
+    businessType?: string;
+    location?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
+
+  const handleAvatarChange = (newAvatar: string) => {
+    if (user) {
+      const updatedUser = { ...user, avatar: newAvatar };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      // Dispatch event to update other components
+      window.dispatchEvent(new CustomEvent('userUpdated'));
+    }
+  };
+
   const businessData = {
-    name: "Green Resort Goa",
-    email: "contact@greenresort.goa",
-    type: "Hotel",
-    location: "Calangute, Goa",
+    name: user?.businessName || "Business User",
+    email: user?.email || "user@example.com",
+    type: user?.businessType || "Business",
+    location: user?.location || "Goa, India",
     joinedDate: "January 2025",
   };
 
@@ -25,11 +59,25 @@ export default function Profile() {
           <div className="lg:col-span-1">
             <Card className="rounded-2xl shadow-lg">
               <CardHeader className="text-center">
-                <Avatar className="w-24 h-24 mx-auto mb-4">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                    GR
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative inline-block mb-4">
+                  <ProfileAvatar
+                    user={user || undefined}
+                    size="lg"
+                    className="mx-auto"
+                  />
+                  <ProfilePictureUpload
+                    currentAvatar={user?.avatar}
+                    onAvatarChange={handleAvatarChange}
+                  >
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0 bg-white shadow-md hover:bg-green-50"
+                    >
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  </ProfilePictureUpload>
+                </div>
                 <CardTitle className="text-xl" data-testid="text-business-name">{businessData.name}</CardTitle>
                 <CardDescription>
                   <Badge variant="secondary" className="mt-2">

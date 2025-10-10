@@ -1,6 +1,9 @@
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import DashboardStats from "@/components/DashboardStats";
 import ListingCard from "@/components/ListingCard";
+import DetailsModal from "@/components/DetailsModal";
+import ChatModal from "@/components/ChatModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +15,36 @@ import { useToast } from "@/hooks/use-toast";
 export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+  const [showChatFor, setShowChatFor] = useState<string | null>(null);
+  const [listings, setListings] = useState<any[]>([]);
+
+  // Load listings from localStorage
+  useEffect(() => {
+    const loadListings = () => {
+      try {
+        const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+        console.log('Dashboard: Loaded listings from localStorage:', storedListings);
+        setListings(storedListings);
+      } catch (error) {
+        console.error('Dashboard: Error loading listings from localStorage:', error);
+        setListings([]);
+      }
+    };
+
+    loadListings();
+
+    // Listen for listing updates
+    const handleListingUpdate = () => {
+      loadListings();
+    };
+
+    window.addEventListener('listingUpdated', handleListingUpdate);
+
+    return () => {
+      window.removeEventListener('listingUpdated', handleListingUpdate);
+    };
+  }, []);
 
   // Fetch user alerts
   const { data: alerts = [], isLoading: isLoadingAlerts } = useQuery({
@@ -55,34 +88,8 @@ export default function Dashboard() {
     { name: "Paper", value: 100, color: "hsl(var(--chart-4))" },
   ];
 
-  const recentListings = [
-    {
-      id: "1",
-      title: "Fresh Organic Kitchen Waste",
-      category: "Organic",
-      description: "Daily kitchen waste from our beachside restaurant",
-      quantity: 25,
-      unit: "kg",
-      businessName: "Sunset Shack",
-      businessType: "Restaurant",
-      status: "available" as const,
-      createdAt: new Date().toISOString(),
-      imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop",
-    },
-    {
-      id: "2",
-      title: "Clean Glass Bottles",
-      category: "Glass",
-      description: "Assorted glass bottles from hotel bar",
-      quantity: 50,
-      unit: "units",
-      businessName: "Beach Paradise Resort",
-      businessType: "Hotel",
-      status: "available" as const,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      imageUrl: "https://images.unsplash.com/photo-1594498257673-9f36b767286c?w=400&h=300&fit=crop",
-    },
-  ];
+  // Use listings from localStorage, limit to recent 3
+  const recentListings = listings.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background">
@@ -235,13 +242,30 @@ export default function Dashboard() {
               <ListingCard
                 key={listing.id}
                 listing={listing}
-                onViewDetails={(id) => console.log('View:', id)}
-                onContact={(id) => console.log('Contact:', id)}
+                onViewDetails={(id) => setSelectedListingId(id)}
+                onContact={(id) => setShowChatFor(id)}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {/* Details Modal */}
+      {selectedListingId && (
+        <DetailsModal
+          listing={recentListings.find(l => l.id === selectedListingId)!}
+          onClose={() => setSelectedListingId(null)}
+          onContact={() => setShowChatFor(selectedListingId)}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {showChatFor && (
+        <ChatModal
+          listing={recentListings.find(l => l.id === showChatFor)!}
+          onClose={() => setShowChatFor(null)}
+        />
+      )}
     </div>
   );
 }

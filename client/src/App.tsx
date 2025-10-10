@@ -15,7 +15,7 @@ import Messages from "@/pages/Messages";
 import AddListing from "@/pages/AddListing";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AuthModal from "@/components/AuthModal";
 import Logistics from "@/pages/Logistics";
 
@@ -37,26 +37,82 @@ function Router() {
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for testing
-  const [userName, setUserName] = useState<string | undefined>("Demo User");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<{
+    id: string;
+    businessName?: string;
+    email?: string;
+    avatar?: string;
+  } | undefined>(undefined);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
+  // Check for existing user in localStorage on app load and listen for changes
+  useEffect(() => {
+    const checkUser = () => {
+      const existingUser = localStorage.getItem('user');
+      if (existingUser) {
+        try {
+          const userData = JSON.parse(existingUser);
+          setIsAuthenticated(true);
+          setUser({
+            id: userData.id || 'unknown',
+            businessName: userData.businessName || userData.name,
+            email: userData.email,
+            avatar: userData.avatar
+          });
+          console.log('Found existing user:', userData);
+        } catch (error) {
+          console.error('Error parsing user from localStorage:', error);
+          localStorage.removeItem('user');
+          setIsAuthenticated(false);
+          setUser(undefined);
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUser(undefined);
+      }
+    };
+
+    // Check on mount
+    checkUser();
+
+    // Listen for storage changes (from other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'user') {
+        checkUser();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Listen for custom events (from same tab)
+    const handleUserUpdate = () => {
+      checkUser();
+    };
+
+    window.addEventListener('userUpdated', handleUserUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userUpdated', handleUserUpdate);
+    };
+  }, []);
+
   const handleLogout = () => {
-    // Clear any stored session if added later
+    // Clear stored session
+    localStorage.removeItem('user');
     setIsAuthenticated(false);
-    setUserName(undefined);
+    setUser(undefined);
   };
 
   const handleLogin = (email: string, _password: string) => {
-    setIsAuthenticated(true);
-    setUserName(email);
-    setAuthModalOpen(false);
+    // This will be handled by the actual login API call in Home.tsx
+    // The user data will be stored in localStorage and the effect will update the state
   };
 
   const handleRegister = (data: { name: string; email: string }) => {
-    setIsAuthenticated(true);
-    setUserName(data.name || data.email);
-    setAuthModalOpen(false);
+    // This will be handled by the actual registration API call in Home.tsx
+    // The user data will be stored in localStorage and the effect will update the state
   };
 
   return (
@@ -69,9 +125,14 @@ function App() {
             </div>
             <Navbar
               isAuthenticated={isAuthenticated}
-              userName={userName || "Business User"}
+              user={user}
               onAuthClick={() => setAuthModalOpen(true)}
               onLogout={handleLogout}
+              onViewProfile={() => window.location.href = '/profile'}
+              onEditProfile={() => {
+                // TODO: Implement profile picture editing
+                console.log('Edit profile picture');
+              }}
             />
             <main className="flex-1">
               <Router />

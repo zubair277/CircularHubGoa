@@ -42,14 +42,34 @@ export default function MyListings() {
 
   useEffect(() => {
     fetchUserListings();
+    
+    // Listen for listing updates
+    const handleListingUpdate = () => {
+      console.log('MyListings: Listing updated, refreshing...');
+      fetchUserListings();
+    };
+    
+    window.addEventListener('listingUpdated', handleListingUpdate);
+    
+    return () => {
+      window.removeEventListener('listingUpdated', handleListingUpdate);
+    };
   }, []);
 
   const fetchUserListings = async () => {
     try {
       setLoading(true);
       
-      // For now, let's create some mock data to test the UI
-      const mockListings: Listing[] = [
+      // Get current user
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) {
+        console.log('No user found, redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+
+      // Always include fallback listings
+      const fallbackListings: Listing[] = [
         {
           id: 1,
           title: "Fresh Organic Kitchen Waste",
@@ -81,8 +101,39 @@ export default function MyListings() {
           ]
         }
       ];
+
+      // Load from localStorage
+      const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+      const userListings = storedListings.filter((listing: any) => listing.userId === user.id);
+      console.log('MyListings: Loaded user listings from localStorage:', userListings);
       
-      setListings(mockListings);
+      // Transform localStorage listings to match our interface
+      const transformedUserListings: Listing[] = userListings.map((listing: any) => ({
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        quantity: parseFloat(listing.quantity) || 0,
+        unit: listing.unit,
+        location: listing.location,
+        status: listing.status || 'available',
+        created_at: listing.createdAt || listing.created_at,
+        progressPercentage: listing.status === 'available' ? 25 : 
+                          listing.status === 'claimed' ? 75 : 100,
+        statusLabel: listing.status === 'available' ? 'Available' :
+                    listing.status === 'claimed' ? 'Claimed' : 'Completed',
+        statusColor: listing.status === 'available' ? 'bg-green-100 text-green-800' :
+                    listing.status === 'claimed' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800',
+        claims: []
+      }));
+      
+      // Combine user listings with fallback listings
+      const allListings = [...transformedUserListings, ...fallbackListings];
+      console.log('MyListings: Combined listings (user + fallback):', allListings);
+      setListings(allListings);
+      return;
+
+      
     } catch (error) {
       console.error('Error fetching listings:', error);
     } finally {
@@ -113,6 +164,44 @@ export default function MyListings() {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const handleDeleteListing = async (listingId: number) => {
+    try {
+      // Get current user
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) {
+        console.log('No user found');
+        return;
+      }
+
+      // Try to delete via API first
+      try {
+        const response = await fetch(`/api/listings/${listingId}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          console.log('Listing deleted via API:', listingId);
+        }
+      } catch (apiError) {
+        console.warn('API delete failed, continuing with localStorage:', apiError);
+      }
+
+      // Remove from localStorage
+      const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+      const updatedListings = storedListings.filter((listing: any) => listing.id !== listingId.toString());
+      localStorage.setItem('listings', JSON.stringify(updatedListings));
+      
+      // Update local state
+      setListings(prev => prev.filter(listing => listing.id !== listingId));
+      
+      // Trigger update event to refresh marketplace
+      window.dispatchEvent(new CustomEvent('listingUpdated'));
+      
+      console.log('Listing deleted successfully:', listingId);
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+    }
   };
 
   if (loading) {
@@ -207,7 +296,12 @@ export default function MyListings() {
                           <Button variant="outline" size="sm">
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteListing(listing.id)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean, jsonb, pgEnum, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, decimal, timestamp, boolean, jsonb, pgEnum, primaryKey, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -95,6 +95,23 @@ export const ratings = pgTable("ratings", {
   review: text("review"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Mutual Reviews System
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transactionId: varchar("transaction_id").notNull(), // reference to completed transaction/claim
+  reviewerId: varchar("reviewer_id").notNull().references(() => users.id),
+  revieweeId: varchar("reviewee_id").notNull().references(() => users.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  publicComment: text("public_comment"),
+  privateFeedback: text("private_feedback"), // only visible to admin
+  submitted: boolean("submitted").notNull().default(false),
+  published: boolean("published").notNull().default(false),
+  expiryDate: timestamp("expiry_date").notNull(), // 14 days from transaction completion
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueTransactionReviewer: unique("unique_transaction_reviewer").on(table.transactionId, table.reviewerId),
+}));
 
 // Pickup Schedules
 export const pickups = pgTable("pickups", {
@@ -286,6 +303,18 @@ export const insertRatingSchema = createInsertSchema(ratings).omit({
 });
 export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
+
+// Reviews
+export const insertReviewSchema = createInsertSchema(reviews).omit({ 
+  id: true, 
+  createdAt: true,
+  submitted: true,
+  published: true
+});
+export const updateReviewSchema = insertReviewSchema.partial();
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type UpdateReview = z.infer<typeof updateReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
 
 // Pickups
 export const insertPickupSchema = createInsertSchema(pickups).omit({ 

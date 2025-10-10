@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useAlerts } from "@/hooks/useAlerts";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const createAlertSchema = z.object({
   keywords: z.string().min(1, "Keywords are required"),
@@ -50,51 +51,74 @@ export default function CreateAlertModal({
   userLocation,
 }: CreateAlertModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { createAlert } = useAlerts();
+  const { addNotification } = useNotifications();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateAlertFormData>({
     resolver: zodResolver(createAlertSchema),
     defaultValues: {
       keywords: initialKeywords,
       categoryId: "",
-      radiusKm: 10,
+      radiusKm: 5,
       userLatitude: userLocation?.latitude,
       userLongitude: userLocation?.longitude,
     },
   });
 
-  const createAlertMutation = useMutation({
-    mutationFn: async (data: CreateAlertFormData) => {
-      const response = await fetch("/api/alerts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          userId: "demo-user-1", // TODO: Get from auth context
-        }),
+  const onSubmit = async (data: CreateAlertFormData) => {
+    setIsSubmitting(true);
+    
+    try {
+      // Get current user
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) {
+        toast({
+          title: "Error",
+          description: "Please log in to create an alert",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create alert locally
+      const alertId = createAlert({
+        keywords: data.keywords,
+        category: data.categoryId || undefined,
+        radiusKm: data.radiusKm,
+        userId: user.id,
       });
-      if (!response.ok) throw new Error("Failed to create alert");
-      return response.json();
-    },
-    onSuccess: () => {
+
+      // Show success toast
       toast({
         title: "Alert created!",
         description: "We'll notify you when matching items are available.",
       });
-      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+
+      // Add notification to bell icon
+      console.log('Creating alert notification for:', data.keywords);
+      addNotification({
+        type: 'alert_triggered',
+        title: 'Alert Created!',
+        message: `Alert for "${data.keywords}" has been set up`,
+        data: { alertId, keywords: data.keywords }
+      });
+      console.log('Alert notification added');
+
+      // Reset form and close modal
+      form.reset();
       onClose();
-    },
-    onError: (error: any) => {
+      
+    } catch (error) {
+      console.error('Error creating alert:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create alert",
+        description: "Failed to create alert. Please try again.",
         variant: "destructive",
       });
-    },
-  });
-
-  const onSubmit = (data: CreateAlertFormData) => {
-    createAlertMutation.mutate(data);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -155,8 +179,8 @@ export default function CreateAlertModal({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createAlertMutation.isPending}>
-              {createAlertMutation.isPending ? "Creating..." : "Save Alert"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Save Alert"}
             </Button>
           </DialogFooter>
         </form>

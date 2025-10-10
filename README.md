@@ -1,3 +1,29 @@
+## Local MySQL Setup
+
+Create a `.env` file with either a single `MYSQL_URL` or individual params:
+
+```
+MYSQL_URL="mysql://user:password@localhost:3306/circulargoa"
+# or individual:
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=yourpassword
+MYSQL_DATABASE=circulargoa
+```
+
+On server start, tables are auto-created if missing. You can run MySQL using Docker:
+
+```
+docker run --name mysql-local -e MYSQL_ROOT_PASSWORD=yourpassword -e MYSQL_DATABASE=circulargoa -p 3306:3306 -d mysql:8
+```
+
+Start dev server:
+
+```
+npm run dev
+```
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
