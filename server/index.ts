@@ -2,9 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { WebSocketServer } from "ws";
-import { db, driver } from "./db";
-import { communityMessages as communityMessagesTable } from "@shared/schema";
-import { sql } from "drizzle-orm";
+import { prisma } from "../lib/prisma";
 
 const app = express();
 app.use(express.json());
@@ -84,58 +82,76 @@ app.use((req, res, next) => {
         }
         
         if (msg.type === 'community_message') {
-          const payload = { communityId: msg.communityId, authorId: msg.authorId, content: msg.content };
-          if (db) {
-            if (driver === 'mysql') {
-              // @ts-ignore
-              await db.execute(sql`INSERT INTO community_messages (community_id, author_id, content) VALUES (${payload.communityId}, ${payload.authorId}, ${payload.content});`);
-            } else {
-              await db.insert(communityMessagesTable).values(payload).returning();
-            }
+          const { communityId, authorId, content } = msg;
+          
+          try {
+            // Save message to database using Prisma
+            const savedMessage = await prisma.communityMessage.create({
+              data: {
+                communityId,
+                authorId,
+                content
+              },
+              include: {
+                author: {
+                  select: {
+                    businessName: true,
+                    avatar: true
+                  }
+                }
+              }
+            });
+
+            // Broadcast to all connected clients
+            wss.clients.forEach((client) => {
+              if ((client as any).readyState === 1) {
+                client.send(JSON.stringify({ 
+                  type: 'community_message', 
+                  ...savedMessage
+                }));
+              }
+            });
+          } catch (error) {
+            console.error('Error saving community message:', error);
           }
-          wss.clients.forEach((client) => {
-            if ((client as any).readyState === 1) {
-              client.send(JSON.stringify({ type: 'community_message', ...payload, createdAt: new Date().toISOString() }));
-            }
-          });
         } else if (msg.type === 'direct_message') {
           // Handle direct messaging between users
           const { conversationId, senderId, receiverId, content } = msg;
           
-          if (db && driver === 'mysql') {
-            // Save message to database
-            await db.execute(
-              sql`INSERT INTO messages (conversation_id, sender_id, receiver_id, content) VALUES (${conversationId}, ${senderId}, ${receiverId}, ${content})`
-            );
-            
+          try {
+            // Save message to database using Prisma
+            const savedMessage = await prisma.message.create({
+              data: {
+                conversationId,
+                senderId,
+                receiverId,
+                content
+              }
+            });
+
             // Update conversation timestamp
-            await db.execute(
-              sql`UPDATE conversations SET updated_at = NOW() WHERE id = ${conversationId}`
-            );
-          }
+            await prisma.conversation.update({
+              where: { id: conversationId },
+              data: { updatedAt: new Date() }
+            });
           
-          // Send message to receiver if they're connected
-          const receiverWs = userConnections.get(receiverId);
-          if (receiverWs && receiverWs.readyState === 1) {
-            receiverWs.send(JSON.stringify({
-              type: 'direct_message',
-              conversationId,
-              senderId,
-              receiverId,
-              content,
-              createdAt: new Date().toISOString()
+            // Send message to receiver if they're connected
+            const receiverWs = userConnections.get(receiverId);
+            if (receiverWs && receiverWs.readyState === 1) {
+              receiverWs.send(JSON.stringify({
+                type: 'direct_message',
+                ...savedMessage
+              }));
+            }
+          
+            // Send confirmation back to sender
+            ws.send(JSON.stringify({
+              type: 'message_sent',
+              ...savedMessage
             }));
+          } catch (error) {
+            console.error('Error saving direct message:', error);
           }
-          
-          // Send confirmation back to sender
-          ws.send(JSON.stringify({
-            type: 'message_sent',
-            conversationId,
-            senderId,
-            receiverId,
-            content,
-            createdAt: new Date().toISOString()
-          }));
         } else if (msg.type === 'message') {
           // Handle legacy message format
           const payload: any = { 

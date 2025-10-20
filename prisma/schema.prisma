@@ -1,0 +1,388 @@
+// CircularHub Goa - Prisma Schema
+// Community marketplace for sustainable resource sharing
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ============== CORE MODELS ==============
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  businessName String
+  businessType String
+  location     String
+  latitude     Float?
+  longitude    Float?
+  phone        String?
+  avatar       String?
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  listings              Listing[]
+  claimsAsBuyer        Claim[]              @relation("ClaimBuyer")
+  claimsAsSeller       Claim[]              @relation("ClaimSeller")
+  alerts               Alert[]
+  sentMessages         Message[]            @relation("MessageSender")
+  receivedMessages     Message[]            @relation("MessageReceiver")
+  givenRatings         Rating[]             @relation("RatingReviewer")
+  receivedRatings      Rating[]             @relation("RatingReviewee")
+  pickups              Pickup[]
+  events               Event[]
+  forumPosts           ForumPost[]
+  forumReplies         ForumReply[]
+  notifications        Notification[]
+  badges               UserBadge[]
+  deliveryRequests     DeliveryRequest[]
+  createdCommunities   Community[]          @relation("CommunityCreator")
+  communityMemberships CommunityMembership[]
+  communityPosts       CommunityPost[]
+  communityComments    CommunityComment[]
+  communityMessages    CommunityMessage[]
+  conversations        ConversationParticipant[]
+
+  @@map("users")
+}
+
+model Listing {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  description  String
+  category     String   // Organic, Glass, Plastic, Metal, Textile, etc.
+  quantity     Float
+  unit         String   // kg, liters, units
+  location     String
+  latitude     Float
+  longitude    Float
+  availability String   // one-time, recurring
+  listingType  String   // offer, request
+  status       String   @default("available") // available, claimed, completed
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims           Claim[]
+  deliveryRequests DeliveryRequest[]
+
+  @@map("listings")
+}
+
+model Claim {
+  id        String   @id @default(cuid())
+  listingId String
+  buyerId   String
+  sellerId  String
+  message   String?
+  status    String   @default("pending") // pending, accepted, rejected, completed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer   User    @relation("ClaimBuyer", fields: [buyerId], references: [id])
+  seller  User    @relation("ClaimSeller", fields: [sellerId], references: [id])
+  ratings Rating[]
+  pickups Pickup[]
+
+  @@map("claims")
+}
+
+model Alert {
+  id            String   @id @default(cuid())
+  userId        String
+  keywords      String
+  categoryId    String?
+  radiusKm      Int
+  userLatitude  Float?
+  userLongitude Float?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+
+// ============== MESSAGING SYSTEM ==============
+
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String @id @default(cuid())
+  conversationId String
+  userId         String
+
+  // Relationships
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  receiverId     String
+  content        String?
+  type           String?  @default("text") // text, offer
+  offerAmount    Float?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  // Relationships
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("MessageSender", fields: [senderId], references: [id])
+  receiver     User         @relation("MessageReceiver", fields: [receiverId], references: [id])
+
+  @@map("messages")
+}
+
+// ============== REVIEWS & RATINGS ==============
+
+model Rating {
+  id         String   @id @default(cuid())
+  claimId    String
+  reviewerId String
+  revieweeId String
+  rating     Int      // 1-5
+  review     String?
+  createdAt  DateTime @default(now())
+
+  // Relationships
+  claim    Claim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  reviewer User  @relation("RatingReviewer", fields: [reviewerId], references: [id])
+  reviewee User  @relation("RatingReviewee", fields: [revieweeId], references: [id])
+
+  @@map("ratings")
+}
+
+// ============== LOGISTICS ==============
+
+model Pickup {
+  id            String    @id @default(cuid())
+  claimId       String
+  userId        String
+  scheduledDate DateTime
+  status        String    @default("scheduled") // scheduled, completed, cancelled
+  wasteWeight   Float?  // kg
+  valueSaved    Float?  // ₹
+  notes         String?
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+
+  // Relationships
+  claim Claim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@map("pickups")
+}
+
+model DeliveryRequest {
+  id              String   @id @default(cuid())
+  listingId       String
+  partnerId       String
+  pickupAddress   String
+  deliveryAddress String
+  itemDetails     String?
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+
+  // Relationships
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  partner User    @relation(fields: [partnerId], references: [id])
+
+  @@map("delivery_requests")
+}
+
+// ============== EVENTS & COMMUNITY ==============
+
+model Event {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  eventDate       DateTime
+  location        String
+  imageUrl        String?
+  organizerId     String?
+  maxParticipants Int?
+  createdAt       DateTime @default(now())
+
+  // Relationships
+  organizer User? @relation(fields: [organizerId], references: [id])
+
+  @@map("events")
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String?
+  category    String?
+  creatorId   String
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  creator     User                  @relation("CommunityCreator", fields: [creatorId], references: [id])
+  memberships CommunityMembership[]
+  posts       CommunityPost[]
+  messages    CommunityMessage[]
+
+  @@map("communities")
+}
+
+model CommunityMembership {
+  id          String   @id @default(cuid())
+  userId      String
+  communityId String
+  role        String   @default("member")
+  joinedAt    DateTime @default(now())
+
+  // Relationships
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@map("community_memberships")
+}
+
+enum PostType {
+  DISCUSSION
+  OFFER
+  REQUEST
+  PROJECT
+
+  @@map("post_type")
+}
+
+model CommunityPost {
+  id          String   @id @default(cuid())
+  title       String
+  type        PostType @default(DISCUSSION)
+  content     String?
+  createdAt   DateTime @default(now())
+  authorId    String
+  communityId String
+
+  // Relationships
+  author    User               @relation(fields: [authorId], references: [id])
+  community Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  comments  CommunityComment[]
+
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+  authorId  String
+  postId    String
+
+  // Relationships
+  author User          @relation(fields: [authorId], references: [id])
+  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("community_comments")
+}
+
+model CommunityMessage {
+  id          String   @id @default(cuid())
+  communityId String
+  authorId    String
+  content     String
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id])
+
+  @@map("community_messages")
+}
+
+// ============== FORUM ==============
+
+model ForumPost {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String
+  category  String   // composting, upcycling, success-stories
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies ForumReply[]
+
+  @@map("forum_posts")
+}
+
+model ForumReply {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relationships
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("forum_replies")
+}
+
+// ============== NOTIFICATIONS & GAMIFICATION ==============
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // listing_match, new_message, pickup_reminder
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  relatedId String?  // ID of related listing, message, etc.
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeType String   // green_champion, top_recycler, etc.
+  earnedAt  DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_badges")
+}
