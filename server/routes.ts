@@ -790,6 +790,249 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== User Preferences Routes ==========
+  app.get("/api/users/:userId/preferences", async (req, res) => {
+    try {
+      const preferences = await prisma.userPreferences.findUnique({
+        where: { userId: req.params.userId }
+      });
+
+      if (!preferences) {
+        // Return default preferences if none exist
+        return res.json({
+          theme: "system",
+          savedFilters: null,
+          notifications: null,
+          defaultRadius: 5000
+        });
+      }
+
+      res.json(preferences);
+    } catch (error) {
+      console.error("Get preferences error:", error);
+      res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  });
+
+  app.post("/api/users/:userId/preferences", async (req, res) => {
+    try {
+      const { theme, savedFilters, notifications, defaultRadius } = req.body;
+
+      const preferences = await prisma.userPreferences.upsert({
+        where: { userId: req.params.userId },
+        update: {
+          theme: theme || undefined,
+          savedFilters: savedFilters ? JSON.stringify(savedFilters) : undefined,
+          notifications: notifications ? JSON.stringify(notifications) : undefined,
+          defaultRadius: defaultRadius || undefined
+        },
+        create: {
+          userId: req.params.userId,
+          theme: theme || "system",
+          savedFilters: savedFilters ? JSON.stringify(savedFilters) : null,
+          notifications: notifications ? JSON.stringify(notifications) : null,
+          defaultRadius: defaultRadius || 5000
+        }
+      });
+
+      res.json(preferences);
+    } catch (error) {
+      console.error("Save preferences error:", error);
+      res.status(500).json({ error: "Failed to save preferences" });
+    }
+  });
+
+  // ========== Search History Routes ==========
+  app.get("/api/users/:userId/search-history", async (req, res) => {
+    try {
+      const history = await prisma.searchHistory.findMany({
+        where: { userId: req.params.userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20
+      });
+
+      res.json(history);
+    } catch (error) {
+      console.error("Get search history error:", error);
+      res.status(500).json({ error: "Failed to fetch search history" });
+    }
+  });
+
+  app.post("/api/search-history", async (req, res) => {
+    try {
+      const { userId, query } = req.body;
+
+      if (!userId || !query) {
+        return res.status(400).json({ error: "userId and query are required" });
+      }
+
+      const history = await prisma.searchHistory.create({
+        data: { userId, query }
+      });
+
+      res.json(history);
+    } catch (error) {
+      console.error("Save search history error:", error);
+      res.status(500).json({ error: "Failed to save search history" });
+    }
+  });
+
+  app.delete("/api/search-history/:id", async (req, res) => {
+    try {
+      await prisma.searchHistory.delete({
+        where: { id: req.params.id }
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete search history error:", error);
+      res.status(500).json({ error: "Failed to delete search history" });
+    }
+  });
+
+  // ========== Listing Media Routes ==========
+  app.post("/api/listings/:listingId/media", async (req, res) => {
+    try {
+      const { type, url, thumbnail, alt, order } = req.body;
+
+      if (!type || !url) {
+        return res.status(400).json({ error: "type and url are required" });
+      }
+
+      const media = await prisma.listingMedia.create({
+        data: {
+          listingId: req.params.listingId,
+          type,
+          url,
+          thumbnail: thumbnail || null,
+          alt: alt || null,
+          order: order || 0
+        }
+      });
+
+      res.json(media);
+    } catch (error) {
+      console.error("Add listing media error:", error);
+      res.status(500).json({ error: "Failed to add media" });
+    }
+  });
+
+  app.get("/api/listings/:listingId/media", async (req, res) => {
+    try {
+      const media = await prisma.listingMedia.findMany({
+        where: { listingId: req.params.listingId },
+        orderBy: { order: 'asc' }
+      });
+
+      res.json(media);
+    } catch (error) {
+      console.error("Get listing media error:", error);
+      res.status(500).json({ error: "Failed to fetch media" });
+    }
+  });
+
+  app.delete("/api/media/:id", async (req, res) => {
+    try {
+      await prisma.listingMedia.delete({
+        where: { id: req.params.id }
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete media error:", error);
+      res.status(500).json({ error: "Failed to delete media" });
+    }
+  });
+
+  // ========== Advanced Search Route ==========
+  app.post("/api/listings/search", async (req, res) => {
+    try {
+      const {
+        query,
+        categories,
+        quantityRange,
+        dateRange,
+        listingType,
+        availability,
+        userId
+      } = req.body;
+
+      const whereClause: any = {
+        status: "available"
+      };
+
+      // Text search
+      if (query) {
+        whereClause.OR = [
+          { title: { contains: query } },
+          { description: { contains: query } }
+        ];
+      }
+
+      // Category filter
+      if (categories && categories.length > 0) {
+        whereClause.category = { in: categories };
+      }
+
+      // Quantity range filter
+      if (quantityRange) {
+        whereClause.quantity = {
+          gte: quantityRange[0],
+          lte: quantityRange[1]
+        };
+      }
+
+      // Date range filter
+      if (dateRange && dateRange.from) {
+        whereClause.createdAt = {
+          gte: new Date(dateRange.from),
+          ...(dateRange.to && { lte: new Date(dateRange.to) })
+        };
+      }
+
+      // Listing type filter
+      if (listingType && listingType.length > 0) {
+        whereClause.listingType = { in: listingType };
+      }
+
+      // Availability filter
+      if (availability && availability.length > 0) {
+        whereClause.availability = { in: availability };
+      }
+
+      const listings = await prisma.listing.findMany({
+        where: whereClause,
+        include: {
+          user: {
+            select: {
+              businessName: true,
+              businessType: true,
+              avatar: true
+            }
+          },
+          media: {
+            orderBy: { order: 'asc' }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      // Save search query to history if userId provided
+      if (userId && query) {
+        await prisma.searchHistory.create({
+          data: { userId, query }
+        }).catch(() => {
+          // Ignore errors for search history
+        });
+      }
+
+      res.json(listings);
+    } catch (error) {
+      console.error("Advanced search error:", error);
+      res.status(500).json({ error: "Failed to search listings" });
+    }
+  });
+
   // ========== Helper Functions ==========
   
   // Check alerts for new listings and create notifications

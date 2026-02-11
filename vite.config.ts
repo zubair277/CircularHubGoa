@@ -24,6 +24,19 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    hmr: {
+      overlay: false, // Disable error overlay
+    },
+    watch: {
+      // Reduce file watching to prevent constant reloads
+      ignored: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/.git/**',
+        '**/prisma/dev.db*',
+        '**/*.md',
+      ],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

@@ -49,34 +49,86 @@ model User {
   communityComments    CommunityComment[]
   communityMessages    CommunityMessage[]
   conversations        ConversationParticipant[]
+  searchHistory        SearchHistory[]
+  preferences          UserPreferences?
 
   @@map("users")
 }
 
 model Listing {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
   title        String
   description  String
-  category     String   // Organic, Glass, Plastic, Metal, Textile, etc.
+  category     String    // Organic, Glass, Plastic, Metal, Textile, etc.
   quantity     Float
-  unit         String   // kg, liters, units
+  unit         String    // kg, liters, units
   location     String
   latitude     Float
   longitude    Float
-  availability String   // one-time, recurring
-  listingType  String   // offer, request
-  status       String   @default("available") // available, claimed, completed
+  availability String    // one-time, recurring
+  listingType  String    // offer, request
+  status       String    @default("available") // available, claimed, completed
   imageUrl     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  expiryDate   DateTime? // Expiry date for time-sensitive materials
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relationships
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   claims           Claim[]
   deliveryRequests DeliveryRequest[]
+  media            ListingMedia[]
 
   @@map("listings")
+}
+
+// ============== MEDIA GALLERY ==============
+
+model ListingMedia {
+  id        String   @id @default(cuid())
+  listingId String
+  type      String   // image, video
+  url       String
+  thumbnail String?
+  alt       String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  // Relationships
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_media")
+}
+
+// ============== SEARCH & PREFERENCES ==============
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("search_history")
+}
+
+model UserPreferences {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  theme            String   @default("system") // light, dark, system
+  savedFilters     String?  // JSON string of saved filter preferences
+  notifications    String?  // JSON string of notification preferences
+  defaultRadius    Int      @default(5000) // Default search radius in meters
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
 }
 
 model Claim {

@@ -20,6 +20,52 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Define fallback listings once as a constant to prevent recreation
+const FALLBACK_LISTINGS = [
+  {
+    id: 'fallback-1',
+    title: 'Fresh Organic Kitchen Waste',
+    description: 'Daily kitchen waste from our beach restaurant. Perfect for composting.',
+    category: 'organic',
+    quantity: 25,
+    unit: 'kg',
+    location: 'Goa, India',
+    latitude: '15.4909',
+    longitude: '73.8278',
+    availability: 'one-time',
+    listingType: 'offer',
+    status: 'available',
+    imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop&crop=center',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    businessName: 'Sunset Shack',
+    businessType: 'Restaurant',
+    distance: 2.3,
+    userId: 'demo-user-1'
+  },
+  {
+    id: 'fallback-2',
+    title: 'Packaging Boxes',
+    description: 'Card boxes from art supplies, clean and ready for reuse.',
+    category: 'paper',
+    quantity: 15,
+    unit: 'units',
+    location: 'Goa, India',
+    latitude: '15.4909',
+    longitude: '73.8278',
+    availability: 'one-time',
+    listingType: 'offer',
+    status: 'available',
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    businessName: 'Art Studio Goa',
+    businessType: 'Art Studio',
+    distance: 1.5,
+    userId: 'demo-user-2'
+  }
+];
+
 export default function Marketplace() {
   const [viewMode, setViewMode] = useState<"list" | "map" | "split">("list");
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,58 +80,12 @@ export default function Marketplace() {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        // Always include fallback listings
-        const fallbackListings = [
-          {
-            id: 'fallback-1',
-            title: 'Fresh Organic Kitchen Waste',
-            description: 'Daily kitchen waste from our beach restaurant. Perfect for composting.',
-            category: 'organic',
-            quantity: 25,
-            unit: 'kg',
-            location: 'Goa, India',
-            latitude: '15.4909',
-            longitude: '73.8278',
-            availability: 'one-time',
-            listingType: 'offer',
-            status: 'available',
-            imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop&crop=center',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            businessName: 'Sunset Shack',
-            businessType: 'Restaurant',
-            distance: 2.3,
-            userId: 'demo-user-1'
-          },
-          {
-            id: 'fallback-2',
-            title: 'Packaging Boxes',
-            description: 'Card boxes from art supplies, clean and ready for reuse.',
-            category: 'paper',
-            quantity: 15,
-            unit: 'units',
-            location: 'Goa, India',
-            latitude: '15.4909',
-            longitude: '73.8278',
-            availability: 'one-time',
-            listingType: 'offer',
-            status: 'available',
-            imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            businessName: 'Art Studio Goa',
-            businessType: 'Art Studio',
-            distance: 1.5,
-            userId: 'demo-user-2'
-          }
-        ];
-
         // Load from localStorage
-          const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
+        const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
         console.log('Marketplace: Loaded listings from localStorage:', storedListings);
         
         // Combine localStorage listings with fallback listings
-        const allListings = [...storedListings, ...fallbackListings];
+        const allListings = [...storedListings, ...FALLBACK_LISTINGS];
         console.log('Marketplace: Combined listings (localStorage + fallback):', allListings);
         console.log('Marketplace: Checking imageUrls in listings:', allListings.map(l => ({ id: l.id, title: l.title, imageUrl: l.imageUrl })));
         setListings(allListings);
@@ -102,53 +102,8 @@ export default function Marketplace() {
     // Listen for storage changes to update listings when new ones are added
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'listings') {
-        // Always include fallback listings when localStorage changes
-        const fallbackListings = [
-          {
-            id: 'fallback-1',
-            title: 'Fresh Organic Kitchen Waste',
-            description: 'Daily kitchen waste from our beach restaurant. Perfect for composting.',
-            category: 'organic',
-            quantity: 25,
-            unit: 'kg',
-            location: 'Goa, India',
-            latitude: '15.4909',
-            longitude: '73.8278',
-            availability: 'one-time',
-            listingType: 'offer',
-            status: 'available',
-            imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop&crop=center',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            businessName: 'Sunset Shack',
-            businessType: 'Restaurant',
-            distance: 2.3,
-            userId: 'demo-user-1'
-          },
-          {
-            id: 'fallback-2',
-            title: 'Packaging Boxes',
-            description: 'Card boxes from art supplies, clean and ready for reuse.',
-            category: 'paper',
-            quantity: 15,
-            unit: 'units',
-            location: 'Goa, India',
-            latitude: '15.4909',
-            longitude: '73.8278',
-            availability: 'one-time',
-            listingType: 'offer',
-            status: 'available',
-            imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            businessName: 'Art Studio Goa',
-            businessType: 'Art Studio',
-            distance: 1.5,
-            userId: 'demo-user-2'
-          }
-        ];
         const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
-        const allListings = [...storedListings, ...fallbackListings];
+        const allListings = [...storedListings, ...FALLBACK_LISTINGS];
         console.log('Marketplace: Storage changed, reloading combined listings:', allListings);
         setListings(allListings);
       }
@@ -158,53 +113,8 @@ export default function Marketplace() {
     
     // Also listen for custom events for same-tab updates
     const handleListingUpdate = () => {
-      // Always include fallback listings when listings are updated
-      const fallbackListings = [
-        {
-          id: 'fallback-1',
-          title: 'Fresh Organic Kitchen Waste',
-          description: 'Daily kitchen waste from our beach restaurant. Perfect for composting.',
-          category: 'organic',
-          quantity: 25,
-          unit: 'kg',
-          location: 'Goa, India',
-          latitude: '15.4909',
-          longitude: '73.8278',
-          availability: 'one-time',
-          listingType: 'offer',
-          status: 'available',
-          imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop&crop=center',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          businessName: 'Sunset Shack',
-          businessType: 'Restaurant',
-          distance: 2.3,
-          userId: 'demo-user-1'
-        },
-        {
-          id: 'fallback-2',
-          title: 'Packaging Boxes',
-          description: 'Card boxes from art supplies, clean and ready for reuse.',
-          category: 'paper',
-          quantity: 15,
-          unit: 'units',
-          location: 'Goa, India',
-          latitude: '15.4909',
-          longitude: '73.8278',
-          availability: 'one-time',
-          listingType: 'offer',
-          status: 'available',
-          imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          businessName: 'Art Studio Goa',
-          businessType: 'Art Studio',
-          distance: 1.5,
-          userId: 'demo-user-2'
-        }
-      ];
       const storedListings = JSON.parse(localStorage.getItem('listings') || '[]');
-      const allListings = [...storedListings, ...fallbackListings];
+      const allListings = [...storedListings, ...FALLBACK_LISTINGS];
       console.log('Marketplace: Listing updated, reloading combined listings:', allListings);
       setListings(allListings);
     };
